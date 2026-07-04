@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+CLAUDE.md
+docs/private/
+*.vcd
+verif/build/
