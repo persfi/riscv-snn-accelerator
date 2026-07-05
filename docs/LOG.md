@@ -14,3 +14,10 @@
 - requirements.txt created with make freeze so python packages can be installed in the future in one command.
 - pip install torch installs the whole stack including ones designated for gpus (which i don't have), uninstalled and installed --index-url .../whl/cpu saving space. 
 - project originally created in mnt/c, figured operating it from wsl slows it down, tried mv them to wsl home. mv failed, files got deleted before git init → had to reinitialize the whole project (always git init first)
+
+## 2026-07-05
+- installed vivado 2026.1 version (needed for arty a7 100t see D1 DESIGN.md): stripped bare except for arty A7 and basic tools to save disk space. 2026 july version's license had an update → used basic tier node locked (tie to machine)
+- dll error when launching vivado, installed visual c++ distributable for the missing 2015-2022 x64 thats causing the error → works.
+- ethernet MAC for vivado host ID (don't have dongle flexid of enterprises, disk serial number more fragile to drive swaps)
+- Vivado installed on windows as wsl doesnt have default usb port that'll be used for connecting my board.
+- learn riscv assembly → till stacks.
