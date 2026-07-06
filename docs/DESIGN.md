@@ -2,7 +2,7 @@
 
 ## 1. Decisions & Rejected Alternatives
 
-### D1: Use the Arty A7 100T FPGA board
+### D1: What FPGA board to run on
 **Chose:** Arty A7 100T 
 **Rejected:** Basys3, PYNQ Z2, DE1-SoC, DE2-115
 **Because:** 
@@ -20,3 +20,18 @@ Reconsider PYNQ Z2 if accelerators, embedded vision, or AI inference became the 
 Consider DE1-SoC for September port target (accelerator fabric, own core stays as host), to demonstrate vendor portability. 
 
 
+### D2: What waveform viewer to use
+**Chose:** GTKWave 
+**Rejected:** Surfer, NovyWave (other open source tools).
+**Because:** GTKWave is the oldest, most documented waveform viewer, and it integrates friction-free with Verilator's trace formats. Most Verilator tutorials or discussions on online forums assume the use of GTKWave. Surfer's newer UI didn't outweigh ecosystem maturity.
+
+
+<small>Commercial tools like Synopsys Verdi are not considered due to the cost of license.</small>
+
+**Revisit if:** Another waveform viewer provides significantly better performance or Verilator integration.
+
+### D3: How to obtain a CPU host 
+**Chose:** Write RV32I core from scratch. 
+**Rejected:** PicoRV32/FemtoRV as host.
+**Because:** The project aims to build the whole vertical stack, and a prebuilt core would leave the host side of the claim empty. Implementing the CPU also serves as structured practice for designing the accelerator's unscaffolded RTL.
+**Revisit if:** Core verification isn't converging by late July, then swap in PicoRV32 and let the accelerator be the entire project.
