@@ -26,4 +26,5 @@
 - installed 64 riscv toolchain from apt, quick and can still run 32 compile commands.
 - smoke test with c file passed → toolchain works properly.
 - studied RISC-V isa, RISC-V assembly, single cycle datapaths, control unit mapping table, and performance eval → can start writing rv32i's verilog tomorrow.
+- add riscv tests as git submodule for testing later.
 
