@@ -21,3 +21,7 @@
 - ethernet MAC for vivado host ID (don't have dongle flexid of enterprises, disk serial number more fragile to drive swaps)
 - Vivado installed on windows as wsl doesnt have default usb port that'll be used for connecting my board.
 - learn riscv assembly → till stacks.
+
+## 2026-07-06
+- installed 64 riscv toolchain from apt, quick and can still run 32 compile commands.
+- smoke test with c file passed → toolchain works properly.

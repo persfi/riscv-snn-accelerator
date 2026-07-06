@@ -13,6 +13,7 @@
 
 ## Build
 - GNU Make 4.4.1
+- riscv64-unknown-elf-gcc (14.2.0+19) 14.2.0 (sudo apt)
 
 ## venv
 - numpy     2.5.0
