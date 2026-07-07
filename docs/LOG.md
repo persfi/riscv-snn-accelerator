@@ -28,3 +28,15 @@
 - studied RISC-V isa, RISC-V assembly, single cycle datapaths, control unit mapping table, and performance eval → can start writing rv32i's verilog tomorrow.
 - add riscv tests as git submodule for testing later.
 
+## 2026-07-07
+- \+ verilog (&sv) extension in vscode.
+- some datapath labels dont follow riscv naming → switched all of them to riscv to make it easier to cross check with encode/decode tables.
+- write data with clk, read data continuosly so that instructions can be proccessed in a single cycle.
+- ascending index range is the convention for arrays ex [0:31].
+- wrote regfile.v (combinational read, x0 gated both sides, no reset)
+- theres 32 registers bc in isa they define 5 bits for rs1 and rs2. 
+- need to map truth tables for ALUs design from isa spec.
+- added make lint → checked for errors for regfile → all fine
+- enable inset final newline in vscode to prevent lint warnings of their absence
+- harness written by claude, reviewed the functions → understood what each of them does so i can write tests properly(generate boilerplate but unit tests are mine to write)
+
