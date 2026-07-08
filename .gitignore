@@ -5,3 +5,4 @@ CLAUDE.md
 docs/private/
 *.vcd
 verif/build/
+.vscode/

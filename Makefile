@@ -31,7 +31,7 @@ test-unit:
 		-CFLAGS "-I$(CURDIR)/verif/harness" \
 		--Mdir $(BUILD_DIR)/$(BLOCK) \
 		-o $(BLOCK)_tb \
-		$(RTL_FILE) verif/unit/$(BLOCK)/$(BLOCK)_tb.cpp
+		$(RTL_FILE) verif/unit/$(BLOCK)/$(BLOCK)_tb.cpp 
 	$(BUILD_DIR)/$(BLOCK)/$(BLOCK)_tb
 
 .PHONY: freeze clean lint test-unit

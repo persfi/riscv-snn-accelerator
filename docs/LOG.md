@@ -40,3 +40,10 @@
 - enable inset final newline in vscode to prevent lint warnings of their absence
 - harness written by claude, reviewed the functions → understood what each of them does so i can write tests properly(generate boilerplate but unit tests are mine to write)
 
+## 2026-07-08
+- in simulator testing, if assign an value, it does not update automatically like real silicons do(for continuous assignments). Have to call eval() to tell the simulatro to reevaluate (see regfile_tb.cpp).
+- only the signals that appear in the port list get exposed as accessible fields on the generated Vregfile C++ class so internally declared signals cant be called with dut.
+- call tb defined methods with td and verilator defined objects with dut (tb.top)
+- tried writing to rs1_data and check if it is correct after settle(), failed tests. Figured reason: I can only drive module input ports in test files. anything written to output ports will get discarded after eval().
+- may be able to recieve the fpga board on 7/10
+- regfile_tb 8/8 tests success. (vscode underlines import as errors because verilated.h is in /usr/share/verilator/include/verilated.h not in project repo. The file is included from makefile so there's actually no errors. → add the path to c_cpp_properties.json to remove the false red underline)
