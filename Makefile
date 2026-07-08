@@ -19,7 +19,7 @@ clean:
 lint:
 	@for f in $(RTL_SOURCES); do \
 		echo "== $$f =="; \
-		verilator --lint-only -Wall $$f || exit 1; \
+		verilator --lint-only -Wall -Irtl/core $$f || exit 1; \
 	done
 
 test-unit:

@@ -49,3 +49,4 @@
 - regfile_tb 8/8 tests success. (vscode underlines import as errors because verilated.h is in /usr/share/verilator/include/verilated.h not in project repo. The file is included from makefile so there's actually no errors. → add the path to c_cpp_properties.json to remove the false red underline)
 - use 4 bits for determining the type of operations in ALUs because rv32i uses funct3 (8 variations) and funct7[5] (1 bit, 2 variations) to set them apart. 8 < 10 variations <16(4bit) therefore uses 4 bits.
 - weighed localparam or 'define for my constants file(defs.vh). Chose localparam because it's actually a constant while 'define is just a macro replacing texts(hard to debug if its duplicated, no type support and lint will not catch the error).
+- built alu.v ran lint, failed → RTL_SOURCES only includes (.v) → added Irtl/core to search through core → lint suceeded
