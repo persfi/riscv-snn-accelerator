@@ -7,6 +7,17 @@
 #include <verilated_vcd_c.h>
 
 #include <cstdio>
+#include <type_traits>
+
+// Detects whether TOP has a clk port, so Testbench works for both clocked
+// and purely combinational DUTs (e.g. the ALU) without a separate class.
+namespace tb_detail {
+template <typename T, typename = void>
+struct has_clk : std::false_type {};
+template <typename T>
+struct has_clk<T, std::void_t<decltype(std::declval<T&>().clk)>>
+    : std::true_type {};
+}  // namespace tb_detail
 
 template <typename TOP>
 class Testbench {
@@ -20,7 +31,9 @@ public:
         ctx_.traceEverOn(true);
         top.trace(&trace_, 99);
         trace_.open(trace_path);
-        top.clk = 0;
+        if constexpr (tb_detail::has_clk<TOP>::value) {
+            top.clk = 0;
+        }
         settle();
     }
 

@@ -28,6 +28,7 @@ test-unit:
 	@test -n "$(RTL_FILE)" || (echo "no rtl module named $(BLOCK).v under rtl/"; exit 1)
 	mkdir -p $(BUILD_DIR)/$(BLOCK)
 	verilator --cc --exe --build -Wall --trace \
+		-I$(dir $(RTL_FILE)) \
 		-CFLAGS "-I$(CURDIR)/verif/harness" \
 		--Mdir $(BUILD_DIR)/$(BLOCK) \
 		-o $(BLOCK)_tb \

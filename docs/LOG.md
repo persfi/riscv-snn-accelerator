@@ -43,10 +43,14 @@
 ## 2026-07-08
 - in simulator testing, if assign an value, it does not update automatically like real silicons do(for continuous assignments). Have to call eval() to tell the simulatro to reevaluate (see regfile_tb.cpp).
 - only the signals that appear in the port list get exposed as accessible fields on the generated Vregfile C++ class so internally declared signals cant be called with dut.
-- call tb defined methods with td and verilator defined objects with dut (tb.top)
+- call tb defined methods with tb and verilator defined objects with dut (tb.top)
 - tried writing to rs1_data and check if it is correct after settle(), failed tests. Figured reason: I can only drive module input ports in test files. anything written to output ports will get discarded after eval().
 - may be able to recieve the fpga board on 7/10
 - regfile_tb 8/8 tests success. (vscode underlines import as errors because verilated.h is in /usr/share/verilator/include/verilated.h not in project repo. The file is included from makefile so there's actually no errors. → add the path to c_cpp_properties.json to remove the false red underline)
 - use 4 bits for determining the type of operations in ALUs because rv32i uses funct3 (8 variations) and funct7[5] (1 bit, 2 variations) to set them apart. 8 < 10 variations <16(4bit) therefore uses 4 bits.
 - weighed localparam or 'define for my constants file(defs.vh). Chose localparam because it's actually a constant while 'define is just a macro replacing texts(hard to debug if its duplicated, no type support and lint will not catch the error).
 - built alu.v ran lint, failed → RTL_SOURCES only includes (.v) → added Irtl/core to search through core → lint suceeded
+
+## 2026-07-09
+- wrote alu_tb, all tests passed. As alu doesn't have clk, added a no-clk condition in tb_harness.
+- because there's a vh file for alu in core, changed unit-test call to make sure it searches for vh's when they're encountered
