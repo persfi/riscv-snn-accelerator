@@ -52,5 +52,10 @@
 - built alu.v ran lint, failed → RTL_SOURCES only includes (.v) → added Irtl/core to search through core → lint suceeded
 
 ## 2026-07-09
-- wrote alu_tb, all tests passed. As alu doesn't have clk, added a no-clk condition in tb_harness.
+- wrote alu_tb, all tests passed (29/29). As alu doesn't have clk, added a no-clk condition in tb_harness.
 - because there's a vh file for alu in core, changed unit-test call to make sure it searches for vh's when they're encountered
+- wrote vectors.s, got to actually memorize the commands and sytnaxs from building not reading (failed to assemble when I didn't put commas between operands and mixed in several '//'s)
+- assmebly: label is just the name for the addr of the next instruction
+- CC enforces testbench split settings in claude.md thats based on file type rather than actually test logic → amended claude.md
+- lint watns unsed bits for inst → not sure if I won't use those bits in the future → added local lint waifer at port → lint pass. Same for vh file, as alu params arent used → local waifer at include → lint pass. 
+- imm_gen tb passed (14/14)

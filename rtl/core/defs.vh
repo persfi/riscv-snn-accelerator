@@ -12,4 +12,10 @@ localparam [3:0] ALU_SRA  = 4'b1101;
 localparam [3:0] ALU_OR   = 4'b0110;
 localparam [3:0] ALU_AND  = 4'b0111;
 
+localparam [2:0] IMM_I  = 3'b000;
+localparam [2:0] IMM_S  = 3'b010;
+localparam [2:0] IMM_B  = 3'b110;
+localparam [2:0] IMM_U  = 3'b111;
+localparam [2:0] IMM_J  = 3'b001;
+
 `endif

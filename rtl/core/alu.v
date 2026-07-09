@@ -5,8 +5,11 @@ module alu(
     input [3:0] alu_ctrl,
     output reg [31:0] result
 );
+    
 
+    /* verilator lint_off UNUSEDPARAM */
     `include "defs.vh"
+    /* verilator lint_on UNUSEDPARAM */
 
     always @(*) begin
         case (alu_ctrl) // '=' for combinational logic

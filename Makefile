@@ -35,7 +35,13 @@ test-unit:
 		$(RTL_FILE) verif/unit/$(BLOCK)/$(BLOCK)_tb.cpp 
 	$(BUILD_DIR)/$(BLOCK)/$(BLOCK)_tb
 
-.PHONY: freeze clean lint test-unit
+dump-asm:
+	@test -n "$(FILE)" || (echo "usage: make dump-asm FILE=<path-to.s>"; exit 1)
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(ARCH_FLAGS) -c $(FILE) -o $(BUILD_DIR)/dump.o
+	$(OBJDUMP) -d $(BUILD_DIR)/dump.o
+
+.PHONY: freeze clean lint test-unit dump-asm
 
 
 
