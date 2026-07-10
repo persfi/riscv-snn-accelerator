@@ -81,3 +81,20 @@ inline int tb_report() {
     std::printf("%d/%d checks passed\n", tb_checks() - tb_failures(), tb_checks());
     return tb_failures() ? 1 : 0;
 }
+
+// optional per-cycle trace line 
+
+// Prints a formatted, printf-style line only when the TRACE env var is set, so integration tests can show cycle-by-cycle state (e.g. "cycle=%d pc=%08x inst=%08x") without cluttering default/CI runs. Field list is upto each *_tb.cpp: grows (writeback reg/value, etc.) without needing any changes here.
+
+inline bool tb_trace_enabled() {
+    static const bool enabled = std::getenv("TRACE") != nullptr;
+    return enabled;
+}
+
+#define TRACE_LINE(...)                  \
+    do {                                  \
+        if (tb_trace_enabled()) {         \
+            std::printf(__VA_ARGS__);     \
+            std::printf("\n");            \
+        }                                 \
+    } while (0) //to prevent mismatching the if statement to a different else

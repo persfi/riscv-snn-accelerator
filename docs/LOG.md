@@ -57,5 +57,16 @@
 - wrote vectors.s, got to actually memorize the commands and sytnaxs from building not reading (failed to assemble when I didn't put commas between operands and mixed in several '//'s)
 - assmebly: label is just the name for the addr of the next instruction
 - CC enforces testbench split settings in claude.md thats based on file type rather than actually test logic → amended claude.md
-- lint watns unsed bits for inst → not sure if I won't use those bits in the future → added local lint waifer at port → lint pass. Same for vh file, as alu params arent used → local waifer at include → lint pass. 
+- lint warns unused bits for inst → not sure if I won't use those bits in the future → added local lint waiver at port → lint pass. Same for vh file, as alu params arent used → local waiver at include → lint pass. 
 - imm_gen tb passed (14/14)
+
+## 2026-07-10
+- wrote pc rtl lint and tests (6/6) passed.
+- wrote imem rtl lint and tests (6/6) passed.
+- parameter N = \$clog2(DEPTH) in imem.v, $clog2 might be risky for quartus versions but it should be fine with vivado for now. change in the future if needed.
+- program.hex should be handled in harness to keep the rtl basic
+- typhoon today, board not arriving. 
+- $readmemh, default verilog system task, copies hex text file to memory array.
+- no need for 0x in hex files. 
+- no need to write assembly instructions for imem testing because it doesn't matter if the hex encoded from the instructions are correct, the function I'm testing for imem is if it reads program.hex properly and truncates the index of address properly.
+

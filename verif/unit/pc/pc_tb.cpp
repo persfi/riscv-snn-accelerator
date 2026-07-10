@@ -27,7 +27,7 @@ int main() {
     dut.rst = 1;
     tb.tick();
     CHECK_EQ(dut.pc_q, RESET_VECTOR, "reset mid-run should return to RESET_VECTOR");
-
+    
     dut.rst = 0;
     dut.pc_next = dut.pc_q + 4;
     tb.tick();

@@ -6,3 +6,4 @@ docs/private/
 *.vcd
 verif/build/
 .vscode/
+/program.hex

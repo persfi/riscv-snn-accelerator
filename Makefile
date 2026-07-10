@@ -5,7 +5,7 @@ ARCH_FLAGS := -march=rv32i -mabi=ilp32
 
 CC      := $(CROSS_COMPILE)gcc
 OBJCOPY := $(CROSS_COMPILE)objcopy
-OBJDUMP := $(CROSS_COMPILE)objdump
+OBJDUMP := $(CROSS_COMPILE)objdump 
 
 RTL_SOURCES := $(shell find rtl -name '*.v')
 BUILD_DIR   := verif/build
@@ -41,7 +41,16 @@ dump-asm:
 	$(CC) $(ARCH_FLAGS) -c $(FILE) -o $(BUILD_DIR)/dump.o
 	$(OBJDUMP) -d $(BUILD_DIR)/dump.o
 
-.PHONY: freeze clean lint test-unit dump-asm
+# Assembles FILE and emits one 32-bit hex word per instruction, in program order starting at address 0: the format $readmemh expects for imem's word-indexed mem array. Defaults to ./program.hex since that's the literal imem.v currently reads.
+
+hex:
+	@test -n "$(FILE)" || (echo "usage: make hex FILE=<path-to.s> [OUT=program.hex]"; exit 1)
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(ARCH_FLAGS) -c $(FILE) -o $(BUILD_DIR)/hex.o
+	$(OBJCOPY) -O binary $(BUILD_DIR)/hex.o $(BUILD_DIR)/hex.bin
+	od -An -tx4 --endian=little -v $(BUILD_DIR)/hex.bin > $(if $(OUT),$(OUT),program.hex)
+
+.PHONY: freeze clean lint test-unit dump-asm hex
 
 
 
