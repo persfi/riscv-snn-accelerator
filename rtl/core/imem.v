@@ -9,7 +9,7 @@ module imem # (
 
 /* verilator lint_on UNUSEDSIGNAL */
     localparam N = $clog2(DEPTH);
-    reg [31:0] mem [0:DEPTH-1];
+    reg [31:0] mem [0:DEPTH-1] /* verilator public_flat_rw */;
 
     //runs exactly once at the start of simulation, loads hex file into mem array.
     initial begin 

@@ -64,9 +64,9 @@
 - wrote pc rtl lint and tests (6/6) passed.
 - wrote imem rtl lint and tests (6/6) passed.
 - parameter N = \$clog2(DEPTH) in imem.v, $clog2 might be risky for quartus versions but it should be fine with vivado for now. change in the future if needed.
-- program.hex should be handled in harness to keep the rtl basic
+- $readmemh, default verilog system task, copies hex text file to memory array. 
+- program.hex will need to load too many tests, and if harness fails to copy then it will be a hard to catch bug → considered plusarg but it only works for sim to read at runtime and not for synthesizers (no runtime concept) → used a pragma of verilator, created load hex in harness to handle write to mem for all sim tests, synth is unaffected as the pragma would be seen as comment and it will run readmemh instead.
 - typhoon today, board not arriving. 
-- $readmemh, default verilog system task, copies hex text file to memory array.
 - no need for 0x in hex files. 
-- no need to write assembly instructions for imem testing because it doesn't matter if the hex encoded from the instructions are correct, the function I'm testing for imem is if it reads program.hex properly and truncates the index of address properly.
+- no need to write assembly instructions for imem testing because it doesn't matter if the hex encoded from the instructions are correct, the function I'm testing for imem is if it reads hex file properly and truncates the index of addresses correctly.
 

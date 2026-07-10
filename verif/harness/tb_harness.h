@@ -7,6 +7,10 @@
 #include <verilated_vcd_c.h>
 
 #include <cstdio>
+#include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <type_traits>
 
 // Detects whether TOP has a clk port, so Testbench works for both clocked
@@ -98,3 +102,41 @@ inline bool tb_trace_enabled() {
             std::printf("\n");            \
         }                                 \
     } while (0) //to prevent mismatching the if statement to a different else
+
+// --- direct hex loading into a `public_flat_rw` memory array --------------
+// Parses the subset of $readmemh's format our .hex files use -- whitespace-
+// separated hex words, `//` line comments, `@addr` markers to jump the
+// write index -- and writes straight into the DUT's exposed memory array
+// (e.g. top.rootp->imem__DOT__mem). Lets one compiled model load a
+// different program per test with no recompile, which is what matters once
+// there are dozens of riscv-tests binaries to run instead of one hand-
+// written program.hex. Does not handle $readmemh's `/* */` block comments;
+// none of our .hex files use them, so that divergence is deliberate.
+template <typename Mem>
+void load_hex(Mem& mem, const char* path, size_t depth) {
+    std::ifstream in(path);
+    if (!in) {
+        std::fprintf(stderr, "load_hex: cannot open %s\n", path);
+        std::exit(1);
+    }
+    size_t index = 0;
+    std::string line;
+    while (std::getline(in, line)) {
+        auto comment = line.find("//");
+        if (comment != std::string::npos) line.resize(comment);
+        std::istringstream iss(line);
+        std::string tok;
+        while (iss >> tok) {
+            if (tok[0] == '@') {
+                index = std::strtoul(tok.c_str() + 1, nullptr, 16);
+                continue;
+            }
+            if (index >= depth) {
+                std::fprintf(stderr, "load_hex: %s has more words than depth=%zu\n",
+                              path, depth);
+                std::exit(1);
+            }
+            mem[index++] = static_cast<uint32_t>(std::strtoul(tok.c_str(), nullptr, 16));
+        }
+    }
+}

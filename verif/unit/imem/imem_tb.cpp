@@ -1,20 +1,16 @@
 
-//index[] values in program.hex
-/* program.hex testing values for this tb:
-
-0x8
-0x0
-0x15
-@3ff // jumps to index 1023 to test boundaries
-0xabcdefff
-
-*/
+// sentinel values for this tb live in vectors.hex, loaded directly into the
+// DUT below via load_hex() (bypasses imem.v's own initial $readmemh, which
+// still reads program.hex for the FPGA/elaboration path but isn't what
+// this test depends on)
 #include "Vimem.h"
+#include "Vimem___024root.h"
 #include "tb_harness.h"
 
 int main() {
     Testbench<Vimem> tb("verif/build/imem/imem.vcd");
     auto& dut = tb.top;
+    load_hex(tb.top.rootp->imem__DOT__mem, "verif/unit/imem/vectors.hex", 1024); //rootp: where you access mem and other internal module design. Load hex (vectors.hex) to mem from imem.
 
     dut.addr = 0x0;
     tb.settle();
