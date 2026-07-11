@@ -55,11 +55,17 @@ public:
 
     void negedge() { top.clk = 0; settle(); }
     void posedge() { top.clk = 1; settle(); }
-    void tick()    { negedge(); posedge(); }
+    void tick()    { negedge(); posedge(); ++cycles_; }
+
+    // Completed tick() count -- for trace lines and cycle-bounded
+    // integration loops ("run N cycles, then check state"). Distinct from
+    // time_, which is a VCD timestamp that also moves on settle()/negedge().
+    vluint64_t cycle() const { return cycles_; }
 
 private:
     VerilatedVcdC trace_;
     vluint64_t time_ = 0;
+    vluint64_t cycles_ = 0;
 };
 
 // --- minimal self-checking assertions -------------------------------------

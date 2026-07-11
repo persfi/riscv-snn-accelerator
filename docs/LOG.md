@@ -70,3 +70,8 @@
 - no need for 0x in hex files. 
 - no need to write assembly instructions for imem testing because it doesn't matter if the hex encoded from the instructions are correct, the function I'm testing for imem is if it reads hex file properly and truncates the index of addresses correctly.
 
+## 2026-07-11
+- harvard architecture: needed seperate imem and dmem. Built dmem without write, test (6/6) passed. finish all leaf files.
+- error in assign in core file, then realized its not actually a problen with assign its forgetting to write the module name → always debug from the first occuring error.
+- output signals can be read in modules→ never seen in hdlbits practice but apparently its common. 
+- wrote core rtl for pc+imem wiring, testing passed (8/8).
