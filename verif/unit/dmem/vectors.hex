@@ -1,0 +1,8 @@
+// dmem_tb sentinel values -- indices/expected reads documented in dmem_tb.cpp
+// (same values as imem's vectors.hex; the index-decode logic being tested
+// is identical, so reusing the already-proven sentinels)
+0x8
+0x0
+0x15
+@3ff // jumps to index 1023 to test boundaries
+0xabcdefff
