@@ -2,6 +2,8 @@
 
 RV32I core driving an event-driven spiking-neural-network accelerator, scheduled at compile time.
 
+RTL is intentionally a minority of this repo. Verification outweighs the design, as it is in industry. (Verilator C++ harness, unit TBs per block, all exists in /verif. Excluded manually from the Github language bar.) 
+
 Started July 2026.
 
 ## Quickstart
