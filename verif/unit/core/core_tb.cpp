@@ -5,7 +5,9 @@
 int main() {
     Testbench<Vcore> tb("verif/build/core/core.vcd");
     auto& dut = tb.top;
-    load_hex(tb.top.rootp->core__DOT__imem__DOT__mem, "verif/unit/core/vectors.hex", 1024); //imem is now nested in core so two DOTS
+
+    // fetch: pc + imem only
+    load_hex(tb.top.rootp->core__DOT__imem__DOT__mem, "verif/unit/core/fetch_vectors.hex", 1024); //imem is now nested in core so two DOTS
 
     dut.rst=1;
     tb.tick();
@@ -26,14 +28,70 @@ int main() {
            (unsigned long long)tb.cycle(), (uint32_t)dut.pc_q, (uint32_t)dut.inst);
     CHECK_EQ(dut.pc_q, 0x00000008, "pc_q should advance 4 after every clk tick");
     CHECK_EQ(dut.inst, 0x00000015, "imem should read inst at addr pc_q");
-    
+
     dut.rst=1;
     tb.tick();
+    dut.rst=0;
     TRACE_LINE("cycle=%llu pc=%08x inst=%08x",
            (unsigned long long)tb.cycle(), (uint32_t)dut.pc_q, (uint32_t)dut.inst);
     CHECK_EQ(dut.pc_q, 0x00000000, "pc_q should reset to 0 after rst=1 in mid cycle");
     CHECK_EQ(dut.inst, 0x00000008, "imem should read inst addr 0x0");
 
+    //lw: full datapath, control decode -> regfile -> imm_gen -> alu -> dmem -> writeback
+    // lw_vectors.hex is the instruction stream (imem); lw_data.hex is what that instruction should load (dmem)
+    
+    
+    load_hex(tb.top.rootp->core__DOT__imem__DOT__mem, "verif/unit/core/lw_vectors.hex", 1024);
+    load_hex(tb.top.rootp->core__DOT__dmem__DOT__mem, "verif/unit/core/lw_data.hex", 1024);
+
+    tb.settle(); //updates sim to new inst in lw_vectors.hex
+    TRACE_LINE("cycle=%llu pc=%08x inst=%08x x5=%08x",
+    (unsigned long long)tb.cycle(), (uint32_t)dut.pc_q, (uint32_t)dut.inst,
+    (uint32_t)tb.top.rootp->core__DOT__regfile__DOT__registers[5]);
+    CHECK_EQ(dut.pc_q, 0x00000000, "pc_q should still be 0 right after loading lw hex, before any tick");
+    CHECK_EQ(dut.inst, 0x00002283, "inst should combinationally read the first lw (lw x5,0(x0))");
+    // zero-init dependent: this only passes because Verilator zero-inits registers[5], it might fail in the future.
+    CHECK_EQ(tb.top.rootp->core__DOT__regfile__DOT__registers[5], 0x00000000, "x5 should still be 0 before any clock edge commits the write");
+
+    tb.tick();
+    TRACE_LINE("cycle=%llu pc=%08x inst=%08x x5=%08x",
+    (unsigned long long)tb.cycle(), (uint32_t)dut.pc_q, (uint32_t)dut.inst,
+    (uint32_t)tb.top.rootp->core__DOT__regfile__DOT__registers[5]);
+    CHECK_EQ(dut.pc_q, 0x00000004, "pc_q should advance to 4 after executing lw x5,0(x0)");
+    CHECK_EQ(dut.inst, 0x00402303, "inst should now read the second lw (lw x6,4(x0))");
+    CHECK_EQ(tb.top.rootp->core__DOT__regfile__DOT__registers[5], 0x00000ccc, "x5 should hold dmem[0] after lw x5,0(x0) commits");
+
+    tb.tick();
+    TRACE_LINE("cycle=%llu pc=%08x inst=%08x x6=%08x",
+    (unsigned long long)tb.cycle(), (uint32_t)dut.pc_q, (uint32_t)dut.inst,
+    (uint32_t)tb.top.rootp->core__DOT__regfile__DOT__registers[6]);
+    CHECK_EQ(dut.pc_q, 0x00000008, "pc_q should advance to 8 after executing lw x6,4(x0)");
+    CHECK_EQ(dut.inst, 0x00532383, "inst should now read the third lw (lw x7,5(x6))");
+    CHECK_EQ(tb.top.rootp->core__DOT__regfile__DOT__registers[6], 0x00000004, "x6 should hold dmem[1] after lw x6,4(x0) commits");
+
+    // lw x7,5(x6): x6=4 is a nonzero base register
+    // addr 9 (4+5) truncates to word index 2. testing nonzero-rs1 address and misaligned-address truncation together
+    tb.tick();
+    TRACE_LINE("cycle=%llu pc=%08x inst=%08x x7=%08x",
+    (unsigned long long)tb.cycle(), (uint32_t)dut.pc_q, (uint32_t)dut.inst,
+    (uint32_t)tb.top.rootp->core__DOT__regfile__DOT__registers[7]);
+    CHECK_EQ(dut.pc_q, 0x0000000c, "pc_q should advance to 0xc after executing lw x7,5(x6)");
+    CHECK_EQ(dut.inst, 0x00628433, "inst should now read the add (add x8,x5,x6):an opcode control.v doesn't decode yet");
+    CHECK_EQ(dut.unknown_op, 1, "unknown_op should go high as soon as the unrecognized opcode is fetched, before it's even executed");
+    CHECK_EQ(tb.top.rootp->core__DOT__regfile__DOT__registers[7], 0x00000009, "x7 should hold dmem[2] (addr 9 truncated to word index 2) after lw x7,5(x6) commits");
+
+    // add x8,x5,x6: R-type isn't decoded by control.v (only OP_LOAD is), so this hits the default: rd_we = 0, x8's write should be suppressed
+    //should comment out after the add case is added
+    dut.rst=1;
+    tb.tick();
+    dut.rst=0;
+    TRACE_LINE("cycle=%llu pc=%08x inst=%08x x8=%08x unknown_op=%d",
+    (unsigned long long)tb.cycle(), (uint32_t)dut.pc_q, (uint32_t)dut.inst,
+    (uint32_t)tb.top.rootp->core__DOT__regfile__DOT__registers[8], (int)dut.unknown_op);
+    CHECK_EQ(dut.pc_q, 0x00000000, "pc_q should reset to 0");
+    CHECK_EQ(dut.inst, 0x00002283, "inst should re-fetch the first lw since pc_q returned to 0");
+    CHECK_EQ(dut.unknown_op, 0, "unknown_op should drop back to 0 once a recognized opcode (lw) is fetched again");
+    CHECK_EQ(tb.top.rootp->core__DOT__regfile__DOT__registers[8], 0x00000000, "x8 should remain 0 as the add's write was correctly suppressed by default");
 
     return tb_report();
 }

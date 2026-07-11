@@ -1,5 +1,5 @@
-`ifndef DEFS_VH
-`define DEFS_VH
+//`ifndef DEFS_VH
+//`define DEFS_VH
 
 localparam [3:0] ALU_ADD  = 4'b0000;
 localparam [3:0] ALU_SUB  = 4'b1000;
@@ -11,13 +11,21 @@ localparam [3:0] ALU_SRL  = 4'b0101;
 localparam [3:0] ALU_SRA  = 4'b1101;
 localparam [3:0] ALU_OR   = 4'b0110;
 localparam [3:0] ALU_AND  = 4'b0111;
+localparam [3:0] ALU_NONE = 4'b1111;
 
 localparam [2:0] IMM_I  = 3'b000; //refer to opcode
 localparam [2:0] IMM_S  = 3'b010;
 localparam [2:0] IMM_B  = 3'b110;
 localparam [2:0] IMM_U  = 3'b111;
 localparam [2:0] IMM_J  = 3'b001;
+localparam [2:0] IMM_NONE = 3'b011;
+
+localparam [6:0] OP_LOAD = 7'b0000011;
+localparam [6:0] OP_R = 7'b0110011;
+localparam [6:0] OP_S = 7'b0100011;
+localparam [6:0] OP_B = 7'b1100011;
+
 
 localparam [31:0] RESET_VECTOR = 32'h0000_0000;
 
-`endif
+//`endif

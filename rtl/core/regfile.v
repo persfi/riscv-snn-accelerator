@@ -10,7 +10,7 @@ module regfile (
     output [31:0] rs2_data
 );
 
-    reg [31:0] registers [0:31];
+    reg [31:0] registers [0:31] /* verilator public_flat_rd */;
 
     assign rs1_data = (rs1_addr==0) ? 0: registers[rs1_addr];
     assign rs2_data = (rs2_addr==0) ? 0: registers[rs2_addr];
