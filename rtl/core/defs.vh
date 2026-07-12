@@ -25,6 +25,11 @@ localparam [6:0] OP_R = 7'b0110011;
 localparam [6:0] OP_S = 7'b0100011;
 localparam [6:0] OP_B = 7'b1100011;
 
+localparam [1:0] ALU_OP_ADD = 2'b00;
+localparam [1:0] ALU_OP_FUNCT = 2'b10;
+localparam [1:0] ALU_OP_BRANCH = 2'b01;
+localparam [1:0] ALU_OP_NONE = 2'b11;
+
 
 localparam [31:0] RESET_VECTOR = 32'h0000_0000;
 

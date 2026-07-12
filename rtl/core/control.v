@@ -1,8 +1,8 @@
 /* verilator lint_off UNUSEDSIGNAL */
 module control(
     input [6:0] op,
-    //input [2:0] funct3,
-    //input [6:0] funct7,
+    input [2:0] funct3,
+    input [6:0] funct7,
     output reg rd_we,
     output reg [2:0] imm_src,
     output reg alu_src,
@@ -17,22 +17,23 @@ module control(
     /* verilator lint_off UNUSEDPARAM */
     `include "defs.vh"
     /* verilator lint_on UNUSEDPARAM */
+    reg [1:0] alu_op;
 
+    //main decoder
     always @(*) begin     
         rd_we  = 0;
         imm_src = IMM_NONE;
         alu_src = 0;
-        alu_ctrl = ALU_NONE;
+        alu_op = ALU_OP_NONE;
         result_src = 0;
         mem_we = 0;
         unknown_op = 1;
-
-        casez (op)
+        case (op)
             OP_LOAD: begin
                 rd_we = 1;
                 imm_src = IMM_I;
                 alu_src = 1;
-                alu_ctrl = ALU_ADD;
+                alu_op = ALU_OP_ADD;
                 result_src = 1;
                 mem_we = 0;
                 unknown_op = 0;
@@ -41,15 +42,31 @@ module control(
                 rd_we = 0;
                 imm_src = IMM_S;
                 alu_src = 1;
-                alu_ctrl = ALU_ADD;
+                alu_op = ALU_OP_ADD;
                 result_src = 0; //rd_we=0 so doesn't matter which one got chosen
                 mem_we = 1;
                 unknown_op = 0;
             end
+            OP_R: begin
+                rd_we = 1;
+                imm_src = IMM_NONE;
+                alu_src = 0;
+                alu_op = ALU_OP_FUNCT;
+                result_src = 0; 
+                mem_we = 0;
+                unknown_op = 0;
+            end
             default ;
         endcase
-
     end
 
+    //alu decoder
+    always @(*) begin
+        case (alu_op)
+            ALU_OP_ADD: alu_ctrl = ALU_ADD;
+            ALU_OP_FUNCT: alu_ctrl = {funct7[5], funct3};
+            default: alu_ctrl = ALU_NONE;
+        endcase
+    end
 
 endmodule

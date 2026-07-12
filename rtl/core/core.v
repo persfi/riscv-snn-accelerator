@@ -38,6 +38,8 @@ module core (
 
     control control (
         .op(inst[6:0]),
+        .funct3(inst[14:12]),
+        .funct7(inst[31:25]),
         .rd_we(rd_we),
         .imm_src(imm_src),
         .alu_src(alu_src),

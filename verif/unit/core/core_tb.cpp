@@ -15,7 +15,7 @@ int main() {
         TRACE_LINE("cycle=%llu pc=%08x inst=%08x unknown_op=%d",
                    (unsigned long long)tb.cycle(), (uint32_t)dut.pc_q,
                    (uint32_t)dut.inst, (int)dut.unknown_op);
-    };//cycle + pc + inst + unknownop
+    };//cycle + pc + inst + unknown_op
 
     //fetch: pc + imem only
     load_hex(imem_arr, "verif/unit/core/fetch_vectors.hex", 1024);
@@ -43,7 +43,6 @@ int main() {
     //lw: full datapath, control decode -> regfile -> imm_gen -> alu -> dmem -> writeback
     //lw_vectors.hex is the instruction stream (imem); data.hex is what that instruction should load (dmem)
     //(renamed from lw_data.hex as its reusable not lw-specific)
-
     load_hex(imem_arr, "verif/unit/core/lw_vectors.hex", 1024);
     load_hex(dmem_arr, "verif/unit/core/data.hex", 1024);
 
@@ -66,25 +65,21 @@ int main() {
 
     // lw x7,5(x6): x6=4 is a nonzero base register
     // addr 9 (4+5) truncates to word index 2. testing nonzero-rs1 address and misaligned-address truncation together
+
     run(1);
     CHECK_EQ(dut.pc_q, 0x0000000c, "pc_q should advance to 0xc after executing lw x7,5(x6)");
     CHECK_EQ(dut.inst, 0x00628433, "inst should now read the add (add x8,x5,x6):an opcode control.v doesn't decode yet");
-    CHECK_EQ(dut.unknown_op, 1, "unknown_op should go high as soon as the unrecognized opcode is fetched, before it's even executed");
     CHECK_REG(7, 0x00000009, "x7 should hold dmem[2] (addr 9 truncated to word index 2) after lw x7,5(x6) commits");
 
-    // add x8,x5,x6: R-type isn't decoded by control.v (only OP_LOAD is), so this hits the default: rd_we = 0, x8's write should be suppressed
-    //should comment out after the add case is added
     dut.rst = 1;
     run(1);
     dut.rst = 0;
     CHECK_EQ(dut.pc_q, 0x00000000, "pc_q should reset to 0");
     CHECK_EQ(dut.inst, 0x00002283, "inst should re-fetch the first lw since pc_q returned to 0");
     CHECK_EQ(dut.unknown_op, 0, "unknown_op should drop back to 0 once a recognized opcode (lw) is fetched again");
-    CHECK_REG(8, 0x00000000, "x8 should remain 0 as the add's write was correctly suppressed by default");
 
     //sw: full datapath, control decode -> regfile -> imm_gen -> alu -> dmem write -> back to dmem read
     //sw_vectors.hex is the instruction stream (imem).
-
     load_hex(imem_arr, "verif/unit/core/sw_vectors.hex", 1024);
     load_hex(dmem_arr, "verif/unit/core/data.hex", 1024);
 
@@ -104,6 +99,35 @@ int main() {
     run(1);
     dut.rst = 0;
     CHECK_MEM(6, 0x00000004, "dmem[6] should survive rst (dmem.v has no reset path)");
+
+    //r-type: full datapath, control decode -> regfile -> alu (funct7[5]/funct3 passthrough) -> writeback
+    //rtype_vectors.hex is the instruction stream (imem). data.hex (reused) preloads dmem so lw can seed x1,x2,x5.
+    load_hex(imem_arr, "verif/unit/core/rtype_vectors.hex", 1024);
+    load_hex(dmem_arr, "verif/unit/core/data.hex", 1024);
+
+    tb.settle(); //updates sim to new inst in rtype_vectors.hex
+
+    run(1);
+    run(1);
+
+    run(1);
+    CHECK_REG(3, 0x0000000d, "add x3,x1,x2 = 4+9 = 13; funct3=000,funct7[5]=0 -> ALU_ADD");
+    run(1);
+    CHECK_REG(4, 0xfffffffb, "sub x4,x1,x2 = 4-9 = -5; same funct3=000 as add, funct7[5]=1 -> ALU_SUB (proves funct7[5] threads through) and rs2 and rs1 are properly pass forward");
+
+    run(1);
+    run(1);
+    CHECK_REG(6, 0x00000008, "and x6,x2,x5 = 9 & 10 = 8");
+
+    run(1);
+    CHECK_REG(7, 0x0fffffff, "srl x7,x4,x1: 0xfffffffb >> 4 logical, zero-filled (funct7[5]=0)");
+
+    run(1);
+    CHECK_REG(8, 0xffffffff, "sra x8,x4,x1: 0xfffffffb >>> 4 arithmetic, sign-filled (funct7[5]=1)");
+    CHECK_EQ(dut.unknown_op, 1, "lui isn't wired yet, unknown_op should go high as soon as it's fetched");
+
+    run(1);
+    CHECK_REG(6, 0x00000008, "x6 should still hold and's result (8) as in the unknown_op category, rd_we = 0");
 
     return tb_report();
 }

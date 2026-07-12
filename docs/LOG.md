@@ -83,3 +83,4 @@
 - wrote sw path, lint and test (31/31 in total for core) passed.
 - don't put spaces around trace "=", 
 - upgraded harness and trace handling (via claude as it's more of a boilerplate) to make tb visualization cleaner and saves time writing tb. 
+- r type path wires, lint and test (36/36 in total for core) passed.
