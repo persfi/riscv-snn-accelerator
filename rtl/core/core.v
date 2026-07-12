@@ -9,6 +9,7 @@ module core (
    
     wire [31:0] pc_next; 
     wire rd_we; 
+    wire mem_we;
     wire [2:0] imm_src; 
     wire alu_src;
     wire [3:0] alu_ctrl; 
@@ -42,6 +43,7 @@ module core (
         .alu_src(alu_src),
         .alu_ctrl(alu_ctrl),
         .result_src(result_src),
+        .mem_we(mem_we),
         .unknown_op(unknown_op)
     );
 
@@ -77,8 +79,13 @@ module core (
     );
 
     dmem dmem (
+        .clk(clk),
+        .mem_we(mem_we),
+        .wstrb(4'b1111),
         .addr(alu_result),
-        .data(dmem_rdata)
+        .wdata(rs2_data),
+        .rdata(dmem_rdata)
+
     );
 
     mux_r mux_r (

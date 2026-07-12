@@ -78,3 +78,7 @@
 - error when linked all leaf files in core, turns out its because of defs's define guard, when multiple modules that uses it are loaded into core, the preprocessing state of verilator remembers that macro was called before so it doesn't load again into the other leaf files. but each modules has their own scope and needs to include param independantly → remove the guard 
 - define guard was C convention, to prevent duplicating parameters in the same translation unit(complete chunk of C or C++ code that the compiler processes in one compilation) if included twice. but modules have their own scope so it doesnt apply to verilog
 - wrote lw path, lint and test (25/25 in total for core) passed.
+
+## 2026-07-12
+- wrote sw path, lint and test (31/31 in total for core) passed.
+- don't put spaces around trace "=", 

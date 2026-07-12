@@ -38,11 +38,12 @@ int main() {
     CHECK_EQ(dut.inst, 0x00000008, "imem should read inst addr 0x0");
 
     //lw: full datapath, control decode -> regfile -> imm_gen -> alu -> dmem -> writeback
-    // lw_vectors.hex is the instruction stream (imem); lw_data.hex is what that instruction should load (dmem)
-    
-    
+    //lw_vectors.hex is the instruction stream (imem); data.hex is what that instruction should load (dmem)
+    //(renamed from lw_data.hex as its reusable not lw-specific)
+
+
     load_hex(tb.top.rootp->core__DOT__imem__DOT__mem, "verif/unit/core/lw_vectors.hex", 1024);
-    load_hex(tb.top.rootp->core__DOT__dmem__DOT__mem, "verif/unit/core/lw_data.hex", 1024);
+    load_hex(tb.top.rootp->core__DOT__dmem__DOT__mem, "verif/unit/core/data.hex", 1024);
 
     tb.settle(); //updates sim to new inst in lw_vectors.hex
     TRACE_LINE("cycle=%llu pc=%08x inst=%08x x5=%08x",
@@ -92,6 +93,41 @@ int main() {
     CHECK_EQ(dut.inst, 0x00002283, "inst should re-fetch the first lw since pc_q returned to 0");
     CHECK_EQ(dut.unknown_op, 0, "unknown_op should drop back to 0 once a recognized opcode (lw) is fetched again");
     CHECK_EQ(tb.top.rootp->core__DOT__regfile__DOT__registers[8], 0x00000000, "x8 should remain 0 as the add's write was correctly suppressed by default");
+
+    //sw: full datapath, control decode -> regfile -> imm_gen -> alu -> dmem write -> back to dmem read
+    //sw_vectors.hex is the instruction stream (imem).
+
+    load_hex(tb.top.rootp->core__DOT__imem__DOT__mem, "verif/unit/core/sw_vectors.hex", 1024);
+    load_hex(tb.top.rootp->core__DOT__dmem__DOT__mem, "verif/unit/core/data.hex", 1024);
+
+    tb.settle(); //updates sim to new inst in sw_vectors.hex
+    tb.tick();
+    tb.tick(); //load to x2 = a, x3 = 4
+    tb.tick();
+    tb.tick(); 
+    TRACE_LINE("cycle=%llu pc=%08x inst=%08x x4=%08x unknown_op=%d",
+    (unsigned long long)tb.cycle(), (uint32_t)dut.pc_q, (uint32_t)dut.inst,
+    (uint32_t)tb.top.rootp->core__DOT__regfile__DOT__registers[4], (int)dut.unknown_op);
+
+    CHECK_EQ(tb.top.rootp->core__DOT__dmem__DOT__mem[6], 0x0000000a, "sw x2,25(x0) should write x2 (0xa) into dmem[6], addr 25 truncates to word index 6");
+    CHECK_EQ(tb.top.rootp->core__DOT__regfile__DOT__registers[4], 0x0000000a, "lw x4,24(x0) should read back what was just stored, addr 24 also truncates to word index 6");
+
+    tb.tick();
+    tb.tick(); 
+    TRACE_LINE("cycle=%llu pc=%08x inst=%08x x4=%08x unknown_op=%d",
+    (unsigned long long)tb.cycle(), (uint32_t)dut.pc_q, (uint32_t)dut.inst,
+    (uint32_t)tb.top.rootp->core__DOT__regfile__DOT__registers[4], (int)dut.unknown_op);
+    CHECK_EQ(tb.top.rootp->core__DOT__dmem__DOT__mem[6], 0x00000004, "sw x3,23(x3) (nonzero base) should overwrite dmem[6] with x3 (4), addr 4+23=27 also truncates to word index 6");
+    CHECK_EQ(tb.top.rootp->core__DOT__regfile__DOT__registers[4], 0x00000004, "lw x4,24(x0) should read back the overwritten value");
+    CHECK_EQ(tb.top.rootp->core__DOT__regfile__DOT__registers[2], 0x0000000a, "x2 should still hold its value from lw as rd_we stayed 0.");
+
+    dut.rst=1;
+    tb.tick();
+    dut.rst=0;
+    TRACE_LINE("cycle=%llu pc=%08x inst=%08x x4=%08x unknown_op=%d",
+    (unsigned long long)tb.cycle(), (uint32_t)dut.pc_q, (uint32_t)dut.inst,
+    (uint32_t)tb.top.rootp->core__DOT__regfile__DOT__registers[4], (int)dut.unknown_op);
+    CHECK_EQ(tb.top.rootp->core__DOT__dmem__DOT__mem[6], 0x00000004, "dmem[6] should survive rst (dmem.v has no reset path)");
 
     return tb_report();
 }
