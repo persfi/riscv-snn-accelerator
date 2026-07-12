@@ -92,8 +92,11 @@ inline int tb_report() {
     return tb_failures() ? 1 : 0;
 }
 
-// optional per-cycle trace line 
+// CHECK_EQ wrappers against a peeked array element, from `public_flat_rd`/`_rw` regfile or memory exposed through rootp. 
+#define CHECK_REG(n, val, msg) CHECK_EQ(regs[n], (uint32_t)(val), msg)
+#define CHECK_MEM(n, val, msg) CHECK_EQ(dmem_arr[n], (uint32_t)(val), msg)
 
+// optional per-cycle trace line 
 // Prints a formatted, printf-style line only when the TRACE env var is set, so integration tests can show cycle-by-cycle state (e.g. "cycle=%d pc=%08x inst=%08x") without cluttering default/CI runs. Field list is upto each *_tb.cpp: grows (writeback reg/value, etc.) without needing any changes here.
 
 inline bool tb_trace_enabled() {
@@ -109,15 +112,6 @@ inline bool tb_trace_enabled() {
         }                                 \
     } while (0) //to prevent mismatching the if statement to a different else
 
-// --- direct hex loading into a `public_flat_rw` memory array --------------
-// Parses the subset of $readmemh's format our .hex files use -- whitespace-
-// separated hex words, `//` line comments, `@addr` markers to jump the
-// write index -- and writes straight into the DUT's exposed memory array
-// (e.g. top.rootp->imem__DOT__mem). Lets one compiled model load a
-// different program per test with no recompile, which is what matters once
-// there are dozens of riscv-tests binaries to run instead of one hand-
-// written program.hex. Does not handle $readmemh's `/* */` block comments;
-// none of our .hex files use them, so that divergence is deliberate.
 template <typename Mem>
 void load_hex(Mem& mem, const char* path, size_t depth) {
     std::ifstream in(path);
