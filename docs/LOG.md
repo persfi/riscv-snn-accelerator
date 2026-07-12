@@ -81,6 +81,9 @@
 
 ## 2026-07-12
 - wrote sw path, lint and test (31/31 in total for core) passed.
-- don't put spaces around trace "=", 
+- don't put spaces around trace "=" or itll return a empty variable error
 - upgraded harness and trace handling (via claude as it's more of a boilerplate) to make tb visualization cleaner and saves time writing tb. 
 - r type path wires, lint and test (36/36 in total for core) passed.
+- riscv64-unknown-elf-gcc only accepted 0-31 shamt, tried -4 but failed → changed to 4
+- last rtype test left pc at 24, need a rst or it reads old instructions.
+- wrote itype paths, lint and test (43/43 in total for core) passed.

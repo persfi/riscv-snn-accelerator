@@ -24,6 +24,7 @@ localparam [6:0] OP_LOAD = 7'b0000011;
 localparam [6:0] OP_R = 7'b0110011;
 localparam [6:0] OP_S = 7'b0100011;
 localparam [6:0] OP_B = 7'b1100011;
+localparam [6:0] OP_IMM = 7'b0010011;
 
 localparam [1:0] ALU_OP_ADD = 2'b00;
 localparam [1:0] ALU_OP_FUNCT = 2'b10;

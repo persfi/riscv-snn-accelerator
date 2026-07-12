@@ -56,15 +56,33 @@ module control(
                 mem_we = 0;
                 unknown_op = 0;
             end
+            OP_IMM: begin
+                rd_we = 1;
+                imm_src = IMM_I;
+                alu_src = 1;
+                alu_op = ALU_OP_FUNCT;
+                result_src = 0; 
+                mem_we = 0;
+                unknown_op = 0;
+            end
             default ;
         endcase
     end
 
+    reg lbit;
     //alu decoder
     always @(*) begin
+        
+        if((op == OP_IMM) && (funct3 != 3'b101)) begin
+            lbit = 1'b0;
+        end
+        else begin
+            lbit = funct7[5];
+        end
+
         case (alu_op)
             ALU_OP_ADD: alu_ctrl = ALU_ADD;
-            ALU_OP_FUNCT: alu_ctrl = {funct7[5], funct3};
+            ALU_OP_FUNCT: alu_ctrl = {lbit, funct3};
             default: alu_ctrl = ALU_NONE;
         endcase
     end

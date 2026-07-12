@@ -129,5 +129,34 @@ int main() {
     run(1);
     CHECK_REG(6, 0x00000008, "x6 should still hold and's result (8) as in the unknown_op category, rd_we = 0");
 
+    //i-type: full datapath, control decode -> regfile -> imm_gen -> alu (lbit-forced funct7[5]/funct3 passthrough) -> writeback
+    //itype_vectors.hex is the instruction stream (imem). no dmem needed:every source value comes from an addi immediate.
+
+    load_hex(imem_arr, "verif/unit/core/itype_vectors.hex", 1024);
+
+    dut.rst = 1;
+    run(1);
+    dut.rst = 0;
+    tb.settle(); //updates sim to new inst in itype_vectors.hex
+
+    run(1);
+    CHECK_REG(5, 0x00000400, "if lbit weren't forced to 0 for non-shift OP_IMM, this would hit ALU_SUB and give 0xfffffc00");
+
+    run(1);
+    CHECK_REG(4, 0xfffffffb, "x4 should be -5");
+
+    run(1);
+    CHECK_REG(5, 0x00000403, "rd==rs1, proves the combinational read (old x5) and non-blocking write (new x5) don't race in the same cycle");
+
+    run(1);
+    CHECK_REG(6, 0x0fffffff, "0xfffffffb >> 4 logical, filling 0s. Proves it's reading the correct funct7[5] compared to srai (next check)");
+
+    run(1);
+    CHECK_REG(7, 0xffffffff, "0xfffffffb >>> 4 arithmetic, sign-filled");
+    CHECK_EQ(dut.unknown_op, 1, "lui isn't wired yet, unknown_op should go high as soon as it's fetched");
+
+    run(1);
+    CHECK_REG(5, 0x00000403, "x5 should still hold 0x403 from the previous addi as in the unknown_op category, rd_we = 0");
+
     return tb_report();
 }
