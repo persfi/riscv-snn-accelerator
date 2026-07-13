@@ -158,5 +158,61 @@ int main() {
     run(1);
     CHECK_REG(5, 0x00000403, "x5 should still hold 0x403 from the previous addi as in the unknown_op category, rd_we = 0");
 
+    //b-type: full datapath, control decode -> branch (comparison already unit-tested in branch_tb.cpp) > mux_pc/pc_target -> pc. this section only proves the wiring: taken/not-taken, forward skip, backward jump, and that a taken branch actually skips the instruction it jumps over.
+    //btype_vectors.hex is the instruction stream (imem). no dmem needed: every value comes from addi immediates.
+
+    load_hex(imem_arr, "verif/unit/core/btype_vectors.hex", 1024);
+
+    dut.rst = 1;
+    run(1);
+    dut.rst = 0;
+    tb.settle(); //updates sim to new inst in btype_vectors.hex
+
+    run(1);
+    CHECK_REG(1, 0x00000005, "addi x1,x0,5: x1=5");
+
+    run(1);
+    CHECK_REG(2, 0x00000005, "addi x2,x0,5: x2=5");
+
+    run(1);
+    CHECK_EQ(dut.pc_q, 0x0000000c, "proves that the opcode eval and branch_ctrl works correctly");
+    CHECK_REG(5, 0x0000000a, "it should execute add operation");
+
+    run(1);
+    CHECK_EQ(dut.pc_q, 0x00000014, "beq x1,x2,target: 5==5, taken, lands on target (0x14), skipping addi x3,x0,1 at 0x10");
+
+    run(1);
+    CHECK_REG(3, 0x00000002, "target: addi x3,x0,2: x3=2, confirms the skipped addi x3,x0,1");
+
+    run(1);
+    CHECK_EQ(dut.pc_q, 0x0000001c, "bne x1,x2,target2: 5==5, not taken, falls through to 0x1c");
+
+    run(1);
+    CHECK_REG(3, 0x00000003, "addi x3,x0,3: x3=3, proves it actually fell through and executed this");
+
+    run(1); 
+
+    run(1);
+    CHECK_REG(3, 0x00000005, "target3 (1st pass): addi x3,x3,2 = 3+2 = 5");
+
+    run(1);
+    CHECK_EQ(dut.pc_q, 0x00000024, "bge x2,x3,target3 (1st eval): 5>=5, taken, jumps backward to target3 (0x24)");
+
+    run(1);
+    CHECK_REG(3, 0x00000007, "target3 (2nd pass): addi x3,x3,2 = 5+2 = 7");
+
+    run(1);
+    CHECK_EQ(dut.pc_q, 0x0000002c, "bge x2,x3,target3 (2nd eval): 5>=7 is false, not taken, exits to 0x2c");
+
+    run(1);
+    CHECK_REG(4, 0xfffffff6, "addi x4,x0,-10: x4=-10");
+
+    run(1);
+    CHECK_EQ(dut.pc_q, 0x00000038, "blt x4,x3,target4: signed -10 < 7, taken, lands on target4 (0x38), skipping target5 at 0x34");
+
+    run(1);
+    CHECK_EQ(dut.pc_q, 0x0000003c, "bltu x4,x3,target5: unsigned -10 (0xfffffff6) > 7, not taken");
+    CHECK_REG(5, 0x0000000a, "x5 should still hold 10 from the add earlier in this section");
+
     return tb_report();
 }

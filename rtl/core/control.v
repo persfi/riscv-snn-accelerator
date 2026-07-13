@@ -6,9 +6,10 @@ module control(
     output reg rd_we,
     output reg [2:0] imm_src,
     output reg alu_src,
-    output reg [3:0] alu_ctrl,
+    output reg [3:0] alu_ctrl, 
     output reg result_src,
     output reg mem_we,
+    output reg branch_ctrl,
     //output reg [3:0] wstrb,
     output reg unknown_op
 );
@@ -65,6 +66,15 @@ module control(
                 mem_we = 0;
                 unknown_op = 0;
             end
+            OP_B: begin
+                rd_we = 0;
+                imm_src = IMM_B;
+                alu_src = 0;
+                alu_op = ALU_OP_BRANCH;
+                result_src = 0; 
+                mem_we = 0;
+                unknown_op = 0;
+            end
             default ;
         endcase
     end
@@ -72,7 +82,10 @@ module control(
     reg lbit;
     //alu decoder
     always @(*) begin
-        
+
+        branch_ctrl = 0;
+        alu_ctrl = ALU_NONE;
+
         if((op == OP_IMM) && (funct3 != 3'b101)) begin
             lbit = 1'b0;
         end
@@ -83,7 +96,8 @@ module control(
         case (alu_op)
             ALU_OP_ADD: alu_ctrl = ALU_ADD;
             ALU_OP_FUNCT: alu_ctrl = {lbit, funct3};
-            default: alu_ctrl = ALU_NONE;
+            ALU_OP_BRANCH: branch_ctrl = 1;
+            default: ;
         endcase
     end
 

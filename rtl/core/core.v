@@ -7,6 +7,7 @@ module core (
     output unknown_op
 );
    
+    wire [31:0] pc_plus4; 
     wire [31:0] pc_next; 
     wire rd_we; 
     wire mem_we;
@@ -21,14 +22,33 @@ module core (
     wire [31:0] alu_result;
     wire [31:0] dmem_rdata;
     wire [31:0] imm;
+    wire [31:0] pc_target;
+    wire pc_src;
+    wire branch_ctrl;
     
-    assign pc_next = pc_q + 32'd4;
+    assign pc_plus4 = pc_q + 32'd4;
+    assign pc_target = pc_q + imm;
 
     pc pc (
         .pc_next(pc_next),
         .clk(clk),
         .rst(rst),
         .pc_q(pc_q)
+    );
+
+    mux_pc mux_pc (
+        .pc_src(pc_src),
+        .pc_plus4(pc_plus4),
+        .pc_target(pc_target),
+        .pc_next(pc_next)
+    );
+
+    branch branch (
+        .branch_ctrl(branch_ctrl),
+        .rs1_data(rs1_data),
+        .rs2_data(rs2_data),
+        .funct3(inst[14:12]),
+        .pc_src(pc_src)
     );
 
     imem imem (
@@ -46,6 +66,7 @@ module core (
         .alu_ctrl(alu_ctrl),
         .result_src(result_src),
         .mem_we(mem_we),
+        .branch_ctrl(branch_ctrl),
         .unknown_op(unknown_op)
     );
 

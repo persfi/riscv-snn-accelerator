@@ -87,3 +87,11 @@
 - riscv64-unknown-elf-gcc only accepted 0-31 shamt, tried -4 but failed → changed to 4
 - last rtype test left pc at 24, need a rst or it reads old instructions.
 - wrote itype paths, lint and test (43/43 in total for core) passed.
+
+## 2026-07-13
+- fpga board arrived, connected via micro usb. power led fine, done led works, preprogramed led patterns work. Vivado device manager can also connect to it, it also shows up on my windows device manager as a usb com port → basic tests done.
+- decided to add seperate branch comparater, would use a bit more LUTs but it reduces the chance of errors from merging them into other units like alus. 
+- bne x1,x2,4 doesn't work because i dont have linker yet, which is supposed to calculate the relative offest and plug into placeholder after assembling into object file. switched the raw numbers to labels intead, which the assembler knows thier position.
+- wrote branch leaf file and test passed (15/15). didn't test it with core because by testing it individually first the core testing have much less variables to consider.
+- wired btype datapath and paseed test (59/59` in total for core)
+
