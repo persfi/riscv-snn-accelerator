@@ -214,5 +214,45 @@ int main() {
     CHECK_EQ(dut.pc_q, 0x0000003c, "bltu x4,x3,target5: unsigned -10 (0xfffffff6) > 7, not taken");
     CHECK_REG(5, 0x0000000a, "x5 should still hold 10 from the add earlier in this section");
 
+    //j-type: full datapath, control decode -> imm_gen  -> jal target adder -> pc; rd <= pc+4 link via mux_r.
+    //jtype_vectors.hex is the instruction stream (imem). data.hex (reused) preloads dmem.
+    // reloading dmem to keep this section's inputs independent of whatever earlier sections did to dmem.
+    load_hex(imem_arr, "verif/unit/core/jtype_vectors.hex", 1024);
+    load_hex(dmem_arr, "verif/unit/core/data.hex", 1024);
+
+    dut.rst = 1;
+    run(1);
+    dut.rst = 0;
+    tb.settle(); //updates sim to new inst in jtype_vectors.hex
+
+    run(1); 
+    run(1); 
+
+    run(1); // jump 2052, setting imm[11] (inst[20]) 
+    CHECK_EQ(dut.pc_q, 0x0000080c, "pc should jump forward to 0x80c");
+    CHECK_REG(0, 0x00000000, "x0 must not get coded with anything but 0");
+
+    run(1);
+    CHECK_EQ(dut.unknown_op, 1, "lui isn't wired yet, unknown_op should go high");
+    run(1);
+    run(1);
+    CHECK_EQ(dut.pc_q, 0x0000000c, "pc should jump back to target2 (0x0c)");
+
+    run(1); 
+
+    run(1);
+    CHECK_EQ(dut.pc_q, 0x00000018, "jal x1,target should jump to target (0x18), skipping the addi at 0x14");
+    CHECK_REG(1, 0x00000014, "jal x1,target should link x1 = pc+4 = 0x14, proving jal computes the link independent of any register read");
+
+    run(1); 
+    CHECK_EQ(dut.pc_q, 0x0000000c, "pc should jump backward to target2 (0x0c)");
+    CHECK_REG(2, 0x0000001c, "x2 should be overwritten with link pc+4=0x1c regardless of it's old value");
+
+    run(1); 
+
+    run(1); 
+    CHECK_EQ(dut.pc_q, 0x00000018, "jal x1,target lands on target again, proving jump is unconditional every time, not just once");
+    CHECK_REG(1, 0x00000014, "x1 should jump to pc+4=0x14");
+
     return tb_report();
 }

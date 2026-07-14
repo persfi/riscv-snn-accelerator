@@ -14,7 +14,7 @@ module core (
     wire [2:0] imm_src; 
     wire alu_src;
     wire [3:0] alu_ctrl; 
-    wire result_src; 
+    wire [1:0] result_src; 
     wire [31:0] result; 
     wire [31:0] rs1_data;
     wire [31:0] rs2_data;
@@ -25,9 +25,12 @@ module core (
     wire [31:0] pc_target;
     wire pc_src;
     wire branch_ctrl;
+    wire jump;
+    wire branch_taken;
     
     assign pc_plus4 = pc_q + 32'd4;
     assign pc_target = pc_q + imm;
+    assign pc_src = branch_taken | jump;
 
     pc pc (
         .pc_next(pc_next),
@@ -48,7 +51,7 @@ module core (
         .rs1_data(rs1_data),
         .rs2_data(rs2_data),
         .funct3(inst[14:12]),
-        .pc_src(pc_src)
+        .branch_taken(branch_taken)
     );
 
     imem imem (
@@ -67,6 +70,7 @@ module core (
         .result_src(result_src),
         .mem_we(mem_we),
         .branch_ctrl(branch_ctrl),
+        .jump(jump),
         .unknown_op(unknown_op)
     );
 
@@ -113,7 +117,8 @@ module core (
 
     mux_r mux_r (
         .alu_result(alu_result),
-        .addr_data(dmem_rdata),
+        .dmem_rdata(dmem_rdata),
+        .pc_plus4(pc_plus4),
         .result_src(result_src),
         .result(result)
     );

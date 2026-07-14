@@ -1,10 +1,23 @@
 module mux_r (
     input [31:0] alu_result,
-    input [31:0] addr_data,
-    input result_src,
-    output [31:0] result
+    input [31:0] dmem_rdata,
+    input [31:0] pc_plus4,
+    input [1:0] result_src,
+    output reg [31:0] result
 );
 
-    assign result = result_src? addr_data : alu_result;
+    /* verilator lint_off UNUSEDPARAM */
+    `include "defs.vh"
+    /* verilator lint_on UNUSEDPARAM */
+
+    always @(*) begin
+        result = 0;
+        case (result_src) 
+            RESULT_ALU: result = alu_result;
+            RESULT_RDATA: result = dmem_rdata;
+            RESULT_PCP4: result = pc_plus4;
+            default: ;
+        endcase
+    end
 
 endmodule

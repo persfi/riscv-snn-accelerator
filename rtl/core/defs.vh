@@ -25,11 +25,17 @@ localparam [6:0] OP_R = 7'b0110011;
 localparam [6:0] OP_S = 7'b0100011;
 localparam [6:0] OP_B = 7'b1100011;
 localparam [6:0] OP_IMM = 7'b0010011;
+localparam [6:0] OP_JAL = 7'b1101111;
 
 localparam [1:0] ALU_OP_ADD = 2'b00;
 localparam [1:0] ALU_OP_FUNCT = 2'b10;
 localparam [1:0] ALU_OP_BRANCH = 2'b01;
 localparam [1:0] ALU_OP_NONE = 2'b11;
+
+localparam [1:0] RESULT_ALU = 2'b00;
+localparam [1:0] RESULT_RDATA = 2'b01;
+localparam [1:0] RESULT_PCP4 = 2'b10;
+localparam [1:0] RESULT_NONE = 2'b11;
 
 
 localparam [31:0] RESET_VECTOR = 32'h0000_0000;
