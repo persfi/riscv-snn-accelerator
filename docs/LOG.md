@@ -96,6 +96,9 @@
 - wired btype datapath and passed test (59/59 in total for core)
 
 ## 2026-07-14
-- added jal type and test passed (68/68 in total for core)
+- added jal type and test passed (69/69 in total for core)
 - added a jump > 4096 decoding imm in imm_gen to see that it does work properly for j far jumps. as the imem depth is set to 1024(for now) in rtl, can't test it in core without changing the setting, so testing it seperately in imm_gen is faster → (16/16) passed
 - .org is absolute address, not offset, so I'd have to subtract the address of jal its jumping from to make sure its > 2048 (>512 index so that it uses the leftmost bit)
+- confused jalr type instruction with jal and branches. rs1+imm jumps to absolute addr not relative to current pc → change the imms → jumps to the correct location.
+- wrote jalr datapath and passed test (76/76 in total for core)
+- lui unknown op was tested 3 times in the past already, skipped for jalr.

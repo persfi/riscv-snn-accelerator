@@ -23,13 +23,16 @@ module core (
     wire [31:0] dmem_rdata;
     wire [31:0] imm;
     wire [31:0] pc_target;
+    wire [31:0] pc_target_sum;
+    wire pc_target_src;
     wire pc_src;
     wire branch_ctrl;
     wire jump;
     wire branch_taken;
     
     assign pc_plus4 = pc_q + 32'd4;
-    assign pc_target = pc_q + imm;
+    assign pc_target_sum = (pc_target_src ? rs1_data : pc_q) + imm;
+    assign pc_target = pc_target_src ? {pc_target_sum[31:1], 1'b0}: pc_target_sum;
     assign pc_src = branch_taken | jump;
 
     pc pc (
@@ -71,6 +74,7 @@ module core (
         .mem_we(mem_we),
         .branch_ctrl(branch_ctrl),
         .jump(jump),
+        .pc_target_src(pc_target_src),
         .unknown_op(unknown_op)
     );
 

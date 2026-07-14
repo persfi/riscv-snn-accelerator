@@ -250,9 +250,39 @@ int main() {
 
     run(1); 
 
-    run(1); 
+    run(1);
     CHECK_EQ(dut.pc_q, 0x00000018, "jal x1,target lands on target again, proving jump is unconditional every time, not just once");
     CHECK_REG(1, 0x00000014, "x1 should jump to pc+4=0x14");
+
+    //jalr: full datapath, control decode -> base-select mux (rs1_data vs pc_q) -> adder -> LSB clear -> pc; rd <= pc+4 link via mux_r.
+    //jalr_vectors.hex is the instruction stream (imem). no dmem needed: every source value comes from addi/link registers.
+    load_hex(imem_arr, "verif/unit/core/jalr_vectors.hex", 1024);
+
+    dut.rst = 1;
+    run(1);
+    dut.rst = 0;
+    tb.settle(); //updates sim to new inst in jalr_vectors.hex
+
+    run(1); 
+
+    run(1); 
+    CHECK_EQ(dut.pc_q, 0x00000010, "jalr x2,12(x1) should truncate the odd sum (17) down to 16, proving the LSB-clear actually fires");
+    CHECK_REG(2, 0x00000008, "jalr x2,12(x1) should link x2 = pc+4 = 0x08");
+
+    run(1); 
+    CHECK_EQ(dut.pc_q, 0x00000008, "jalr x0,0(x2) should jump to x2+0=0x08, proving it jumps backwards to absolute address");
+    CHECK_REG(0, 0x00000000, "jalr x0,0(x2) must not write into x0 , x0 stays 0");
+
+    run(1);
+
+    run(1);
+    CHECK_EQ(dut.pc_q, 0x00000014, "jalr x3,17(x3) should jump to (0x14)");
+    CHECK_REG(3, 0x00000010, "jalr x3,17(x3) should link x3=pc+4=0x10, proving rs1_data was read before write, no race occured.");
+
+    run(1); 
+
+    run(1); 
+    CHECK_EQ(dut.pc_q, 0x00000000, "jalr x4,-8(x2) should jump to 8+(-8)=0, proving imm is sign-extended (not zero-extended) through the jalr adder");
 
     return tb_report();
 }

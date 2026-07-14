@@ -11,6 +11,7 @@ module control(
     output reg mem_we,
     output reg branch_ctrl,
     output reg jump,
+    output reg pc_target_src,
     //output reg [3:0] wstrb,
     output reg unknown_op
 );
@@ -30,6 +31,7 @@ module control(
         result_src = RESULT_NONE;
         mem_we = 0;
         jump=0;
+        pc_target_src=0;
         unknown_op = 1;
         case (op)
             OP_LOAD: begin
@@ -40,6 +42,7 @@ module control(
                 result_src = RESULT_RDATA;
                 mem_we = 0;
                 jump=0;
+                pc_target_src=0;
                 unknown_op = 0;
             end
             OP_S: begin
@@ -50,6 +53,7 @@ module control(
                 result_src = RESULT_NONE; //rd_we=0 so doesn't matter which one got chosen
                 mem_we = 1;
                 jump=0;
+                pc_target_src=0;
                 unknown_op = 0;
             end
             OP_R: begin
@@ -60,6 +64,7 @@ module control(
                 result_src = RESULT_ALU; 
                 mem_we = 0;
                 jump=0;
+                pc_target_src=0;
                 unknown_op = 0;
             end
             OP_IMM: begin
@@ -70,6 +75,7 @@ module control(
                 result_src = RESULT_ALU; 
                 mem_we = 0;
                 jump=0;
+                pc_target_src=0;
                 unknown_op = 0;
             end
             OP_B: begin
@@ -80,6 +86,7 @@ module control(
                 result_src = RESULT_NONE; 
                 mem_we = 0;
                 jump=0;
+                pc_target_src=0;
                 unknown_op = 0;
             end
             OP_JAL: begin
@@ -90,6 +97,18 @@ module control(
                 result_src = RESULT_PCP4; 
                 mem_we = 0;
                 jump=1;
+                pc_target_src=0;
+                unknown_op = 0;
+            end
+            OP_JALR: begin
+                rd_we = 1;
+                imm_src = IMM_I;
+                alu_src = 0; // won't use
+                alu_op = ALU_OP_NONE;
+                result_src = RESULT_PCP4; 
+                mem_we = 0;
+                jump=1;
+                pc_target_src=1;
                 unknown_op = 0;
             end
             default ;
