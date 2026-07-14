@@ -90,8 +90,12 @@
 
 ## 2026-07-13
 - fpga board arrived, connected via micro usb. power led fine, done led works, preprogramed led patterns work. Vivado device manager can also connect to it, it also shows up on my windows device manager as a usb com port → basic tests done.
-- decided to add seperate branch comparater, would use a bit more LUTs but it reduces the chance of errors from merging them into other units like alus. 
+- decided to add seperate branch comparator, would use a bit more LUTs but it reduces the chance of errors from merging them into other units like alus. 
 - bne x1,x2,4 doesn't work because i dont have linker yet, which is supposed to calculate the relative offest and plug into placeholder after assembling into object file. switched the raw numbers to labels intead, which the assembler knows thier position.
 - wrote branch leaf file and test passed (15/15). didn't test it with core because by testing it individually first the core testing have much less variables to consider.
-- wired btype datapath and paseed test (59/59` in total for core)
+- wired btype datapath and passed test (59/59 in total for core)
 
+## 2026-07-14
+- added jal type and test passed (68/68 in total for core)
+- added a jump > 4096 decoding imm in imm_gen to see that it does work properly for j far jumps. as the imem depth is set to 1024(for now) in rtl, can't test it in core without changing the setting, so testing it seperately in imm_gen is faster → (16/16) passed
+- .org is absolute address, not offset, so I'd have to subtract the address of jal its jumping from to make sure its > 2048 (>512 index so that it uses the leftmost bit)

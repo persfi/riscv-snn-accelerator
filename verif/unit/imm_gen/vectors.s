@@ -27,3 +27,11 @@ jal x5, fwd2 # positive offset = 4
 fwd2:
 jal x5, back2 # negative offset = -4
 
+# J type, wide: gap forced past 4096 bytes so the offset sets imm[19:12] 
+# couldn't test in core tb since it's only 1024 words (4096 bytes) deep
+back3:
+jal x5, fwd3 
+.org 0x1038
+fwd3:
+jal x5, back3
+

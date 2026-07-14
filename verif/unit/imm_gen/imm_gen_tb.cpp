@@ -72,5 +72,13 @@ int main() {
     tb.settle();
     CHECK_EQ(dut.imm, 0xfffffffc, "imm_gen J-type should produce negative jump offset");
 
+    
+    dut.inst = 0x000012ef; 
+    tb.settle();
+    CHECK_EQ(dut.imm, 0x00001000, "imm_gen J-type should decode inst[19:12] correctly, not just inst[30:21]");
+    dut.inst = 0x800ff2ef; 
+    tb.settle();
+    CHECK_EQ(dut.imm, 0xfffff000, "imm_gen J-type should sign-extend and decode inst[19:12] together correctly");
+
     return tb_report();
 }
