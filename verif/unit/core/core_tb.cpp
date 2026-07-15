@@ -284,7 +284,7 @@ int main() {
     run(1);
     CHECK_EQ(dut.pc_q, 0x00000000, "jalr x4,-8(x2) should jump to 8+(-8)=0, proving imm is sign-extended (not zero-extended) through the jalr adder");
 
-    //u-type: full datapath, control decode -> imm_gen (IMM_U, {inst[31:12],12'b0}) -> mux_r (RESULT_U) -> writeback.
+    //u-type: full datapath, control decode -> imm_gen (IMM_U, {inst[31:12],12'b0}) -> mux_r (RESULT_LUI) -> writeback.
     //also confirms a genuinely unrecognized opcode (not just an unimplemented one) still triggers unknown_op.
     //utype_vectors.hex is the instruction stream (imem). no dmem needed.
     load_hex(imem_arr, "verif/unit/core/utype_vectors.hex", 1024);
@@ -308,6 +308,21 @@ int main() {
     CHECK_REG(1, 0x001bc000, "word 0x7f,rd=x1: x1 unchanged, proving rd_we=0");
     CHECK_EQ(dut.pc_q, 0x00000010, "word 0x7f: pc should still advance to addi (0x10)");
     CHECK_EQ(dut.unknown_op, 0, "addi x3,x0,5: unknown_op =0 ");
+
+    //auipc: full datapath, control decode -> mux_a (alu_src_a selects pc) + mux_b (alu_src_b selects imm) -> alu (ALU_ADD) -> writeback (RESULT_ALU).
+    run(1);
+
+    run(1);
+    CHECK_REG(3, 0xaffff014, "auipc x3,0xaffff: rd = pc + imm<<12 = 0x14 + 0xaffff000");
+
+    run(1);
+    CHECK_REG(0, 0x00000000, "auipc x0,0x1294: x0 stays 0");
+    CHECK_EQ(dut.unknown_op, 1, "word 0x7f: unrecognized opcode, unknown_op high");
+
+    run(1);
+    CHECK_REG(1, 0x001bc000, "word 0x7f,rd=x1: x1 unchanged, proving rd_we=0");
+    CHECK_EQ(dut.pc_q, 0x00000020, "word 0x7f: pc advances to addi (0x20)");
+    CHECK_EQ(dut.unknown_op, 0, "addi x4,x0,5: unknown_op =0 ");
 
     return tb_report();
 }

@@ -5,7 +5,8 @@ module control(
     input [6:0] funct7,
     output reg rd_we,
     output reg [2:0] imm_src,
-    output reg alu_src,
+    output reg alu_src_b,
+    output reg alu_src_a,
     output reg [3:0] alu_ctrl, 
     output reg [1:0] result_src,
     output reg mem_we,
@@ -26,7 +27,8 @@ module control(
     always @(*) begin     
         rd_we  = 0;
         imm_src = IMM_NONE;
-        alu_src = 0;
+        alu_src_b = 0;
+        alu_src_a =0;
         alu_op = ALU_OP_NONE;
         result_src = 0;
         mem_we = 0;
@@ -37,7 +39,8 @@ module control(
             OP_LOAD: begin
                 rd_we = 1;
                 imm_src = IMM_I;
-                alu_src = 1;
+                alu_src_b = 1;
+                alu_src_a =0;
                 alu_op = ALU_OP_ADD;
                 result_src = RESULT_RDATA;
                 mem_we = 0;
@@ -48,7 +51,8 @@ module control(
             OP_S: begin
                 rd_we = 0;
                 imm_src = IMM_S;
-                alu_src = 1;
+                alu_src_b = 1;
+                alu_src_a =0;
                 alu_op = ALU_OP_ADD;
                 result_src = 0; //rd_we=0 so doesn't matter which one got chosen
                 mem_we = 1;
@@ -59,7 +63,8 @@ module control(
             OP_R: begin
                 rd_we = 1;
                 imm_src = IMM_NONE;
-                alu_src = 0;
+                alu_src_b = 0;
+                alu_src_a =0;
                 alu_op = ALU_OP_FUNCT;
                 result_src = RESULT_ALU; 
                 mem_we = 0;
@@ -70,7 +75,8 @@ module control(
             OP_IMM: begin
                 rd_we = 1;
                 imm_src = IMM_I;
-                alu_src = 1;
+                alu_src_b = 1;
+                alu_src_a =0;
                 alu_op = ALU_OP_FUNCT;
                 result_src = RESULT_ALU; 
                 mem_we = 0;
@@ -81,7 +87,8 @@ module control(
             OP_B: begin
                 rd_we = 0;
                 imm_src = IMM_B;
-                alu_src = 0;
+                alu_src_b = 0;
+                alu_src_a =0;
                 alu_op = ALU_OP_BRANCH;
                 result_src = 0; 
                 mem_we = 0;
@@ -92,7 +99,8 @@ module control(
             OP_JAL: begin
                 rd_we = 1;
                 imm_src = IMM_J;
-                alu_src = 0; // won't use
+                alu_src_b = 0; // won't use
+                alu_src_a =0;
                 alu_op = ALU_OP_NONE;
                 result_src = RESULT_PCP4; 
                 mem_we = 0;
@@ -103,7 +111,8 @@ module control(
             OP_JALR: begin
                 rd_we = 1;
                 imm_src = IMM_I;
-                alu_src = 0; // won't use
+                alu_src_b = 0; // won't use
+                alu_src_a =0;
                 alu_op = ALU_OP_NONE;
                 result_src = RESULT_PCP4; 
                 mem_we = 0;
@@ -111,12 +120,25 @@ module control(
                 pc_target_src=1;
                 unknown_op = 0;
             end
-            OP_U: begin
+            OP_LUI: begin
                 rd_we = 1;
                 imm_src = IMM_U;
-                alu_src = 0; // won't use
+                alu_src_b = 0; // won't use
+                alu_src_a =0;
                 alu_op = ALU_OP_NONE;
-                result_src = RESULT_U; 
+                result_src = RESULT_LUI;
+                mem_we = 0;
+                jump=0;
+                pc_target_src=0;
+                unknown_op = 0;
+            end
+            OP_AUIPC: begin
+                rd_we = 1;
+                imm_src = IMM_U;
+                alu_src_b = 1; 
+                alu_src_a =1;
+                alu_op = ALU_OP_ADD;
+                result_src = RESULT_ALU; 
                 mem_we = 0;
                 jump=0;
                 pc_target_src=0;

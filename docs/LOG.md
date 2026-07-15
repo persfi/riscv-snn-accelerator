@@ -106,3 +106,4 @@
 ## 2026-07-15
 - commeted out old lui tests bc now I've implemented lui it wouldn't work anymore
 - added lui datapath and test passed  (78/78 in total for core)
+- added auipc datapath and test passed (84/84 in total for core)

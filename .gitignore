@@ -3,6 +3,8 @@ __pycache__/
 CLAUDE.md
 AGENTS.md
 .claude/
+.codex/
+.agents/
 docs/private/
 *.vcd
 verif/build/

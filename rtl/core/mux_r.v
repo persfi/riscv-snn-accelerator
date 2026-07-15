@@ -17,7 +17,7 @@ module mux_r (
             RESULT_ALU: result = alu_result;
             RESULT_RDATA: result = dmem_rdata;
             RESULT_PCP4: result = pc_plus4;
-            RESULT_U: result = imm;
+            RESULT_LUI: result = imm;
             default: ;
         endcase
     end

@@ -12,13 +12,15 @@ module core (
     wire rd_we; 
     wire mem_we;
     wire [2:0] imm_src; 
-    wire alu_src;
+    wire alu_src_b;
+    wire alu_src_a;
     wire [3:0] alu_ctrl; 
     wire [1:0] result_src; 
     wire [31:0] result; 
     wire [31:0] rs1_data;
     wire [31:0] rs2_data;
     wire [31:0] b;
+    wire [31:0] a;
     wire [31:0] alu_result;
     wire [31:0] dmem_rdata;
     wire [31:0] imm;
@@ -68,7 +70,8 @@ module core (
         .funct7(inst[31:25]),
         .rd_we(rd_we),
         .imm_src(imm_src),
-        .alu_src(alu_src),
+        .alu_src_b(alu_src_b),
+        .alu_src_a(alu_src_a),
         .alu_ctrl(alu_ctrl),
         .result_src(result_src),
         .mem_we(mem_we),
@@ -98,12 +101,19 @@ module core (
     mux_b mux_b (
         .imm(imm),
         .rs2_data(rs2_data),
-        .alu_src(alu_src),
+        .alu_src_b(alu_src_b),
         .b(b)
     );
 
+    mux_a mux_a (
+        .rs1_data(rs1_data),
+        .pc_q(pc_q),
+        .alu_src_a(alu_src_a),
+        .a(a)
+    );
+
     alu alu (
-        .a(rs1_data),
+        .a(a),
         .b(b),
         .alu_ctrl(alu_ctrl),
         .result(alu_result)
