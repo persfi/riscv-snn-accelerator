@@ -124,10 +124,10 @@ int main() {
 
     run(1);
     CHECK_REG(8, 0xffffffff, "sra x8,x4,x1: 0xfffffffb >>> 4 arithmetic, sign-filled (funct7[5]=1)");
-    CHECK_EQ(dut.unknown_op, 1, "lui isn't wired yet, unknown_op should go high as soon as it's fetched");
+    // CHECK_EQ(dut.unknown_op, 1, "lui isn't wired yet, unknown_op should go high as soon as it's fetched");
 
     run(1);
-    CHECK_REG(6, 0x00000008, "x6 should still hold and's result (8) as in the unknown_op category, rd_we = 0");
+    // CHECK_REG(6, 0x00000008, "x6 should still hold and's result (8) as in the unknown_op category, rd_we = 0");
 
     //i-type: full datapath, control decode -> regfile -> imm_gen -> alu (lbit-forced funct7[5]/funct3 passthrough) -> writeback
     //itype_vectors.hex is the instruction stream (imem). no dmem needed:every source value comes from an addi immediate.
@@ -153,10 +153,10 @@ int main() {
 
     run(1);
     CHECK_REG(7, 0xffffffff, "0xfffffffb >>> 4 arithmetic, sign-filled");
-    CHECK_EQ(dut.unknown_op, 1, "lui isn't wired yet, unknown_op should go high as soon as it's fetched");
+    // CHECK_EQ(dut.unknown_op, 1, "lui isn't wired yet, unknown_op should go high as soon as it's fetched");
 
     run(1);
-    CHECK_REG(5, 0x00000403, "x5 should still hold 0x403 from the previous addi as in the unknown_op category, rd_we = 0");
+    // CHECK_REG(5, 0x00000403, "x5 should still hold 0x403 from the previous addi as in the unknown_op category, rd_we = 0");
 
     //b-type: full datapath, control decode -> branch (comparison already unit-tested in branch_tb.cpp) > mux_pc/pc_target -> pc. this section only proves the wiring: taken/not-taken, forward skip, backward jump, and that a taken branch actually skips the instruction it jumps over.
     //btype_vectors.hex is the instruction stream (imem). no dmem needed: every value comes from addi immediates.
@@ -233,7 +233,7 @@ int main() {
     CHECK_REG(0, 0x00000000, "x0 must not get coded with anything but 0");
 
     run(1);
-    CHECK_EQ(dut.unknown_op, 1, "lui isn't wired yet, unknown_op should go high");
+    // CHECK_EQ(dut.unknown_op, 1, "lui isn't wired yet, unknown_op should go high");
     run(1);
     run(1);
     CHECK_EQ(dut.pc_q, 0x0000000c, "pc should jump back to target2 (0x0c)");
@@ -281,8 +281,33 @@ int main() {
 
     run(1); 
 
-    run(1); 
+    run(1);
     CHECK_EQ(dut.pc_q, 0x00000000, "jalr x4,-8(x2) should jump to 8+(-8)=0, proving imm is sign-extended (not zero-extended) through the jalr adder");
+
+    //u-type: full datapath, control decode -> imm_gen (IMM_U, {inst[31:12],12'b0}) -> mux_r (RESULT_U) -> writeback.
+    //also confirms a genuinely unrecognized opcode (not just an unimplemented one) still triggers unknown_op.
+    //utype_vectors.hex is the instruction stream (imem). no dmem needed.
+    load_hex(imem_arr, "verif/unit/core/utype_vectors.hex", 1024);
+
+    dut.rst = 1;
+    run(1);
+    dut.rst = 0;
+    tb.settle(); //updates sim to new inst in utype_vectors.hex
+
+    run(1);
+    CHECK_REG(1, 0x001bc000, "lui x1,0x1bc: rd = imm<<12, imm[11:0] zeroed");
+
+    run(1);
+    CHECK_REG(2, 0xaffff000, "lui x2,0xaffff: top bit set, not sign-extended");
+
+    run(1);
+    CHECK_REG(0, 0x00000000, "lui x0,0xa357: x0 stays 0");
+    CHECK_EQ(dut.unknown_op, 1, "word 0x7f: unrecognized opcode, unknown_op high");
+
+    run(1);
+    CHECK_REG(1, 0x001bc000, "word 0x7f,rd=x1: x1 unchanged, proving rd_we=0");
+    CHECK_EQ(dut.pc_q, 0x00000010, "word 0x7f: pc should still advance to addi (0x10)");
+    CHECK_EQ(dut.unknown_op, 0, "addi x3,x0,5: unknown_op =0 ");
 
     return tb_report();
 }

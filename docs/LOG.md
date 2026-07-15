@@ -102,3 +102,7 @@
 - confused jalr type instruction with jal and branches. rs1+imm jumps to absolute addr not relative to current pc → change the imms → jumps to the correct location.
 - wrote jalr datapath and passed test (76/76 in total for core)
 - lui unknown op was tested 3 times in the past already, skipped for jalr.
+
+## 2026-07-15
+- commeted out old lui tests bc now I've implemented lui it wouldn't work anymore
+- added lui datapath and test passed  (78/78 in total for core)

@@ -123,6 +123,7 @@ module core (
         .alu_result(alu_result),
         .dmem_rdata(dmem_rdata),
         .pc_plus4(pc_plus4),
+        .imm(imm),
         .result_src(result_src),
         .result(result)
     );

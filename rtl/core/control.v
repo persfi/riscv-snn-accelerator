@@ -28,7 +28,7 @@ module control(
         imm_src = IMM_NONE;
         alu_src = 0;
         alu_op = ALU_OP_NONE;
-        result_src = RESULT_NONE;
+        result_src = 0;
         mem_we = 0;
         jump=0;
         pc_target_src=0;
@@ -50,7 +50,7 @@ module control(
                 imm_src = IMM_S;
                 alu_src = 1;
                 alu_op = ALU_OP_ADD;
-                result_src = RESULT_NONE; //rd_we=0 so doesn't matter which one got chosen
+                result_src = 0; //rd_we=0 so doesn't matter which one got chosen
                 mem_we = 1;
                 jump=0;
                 pc_target_src=0;
@@ -83,7 +83,7 @@ module control(
                 imm_src = IMM_B;
                 alu_src = 0;
                 alu_op = ALU_OP_BRANCH;
-                result_src = RESULT_NONE; 
+                result_src = 0; 
                 mem_we = 0;
                 jump=0;
                 pc_target_src=0;
@@ -109,6 +109,17 @@ module control(
                 mem_we = 0;
                 jump=1;
                 pc_target_src=1;
+                unknown_op = 0;
+            end
+            OP_U: begin
+                rd_we = 1;
+                imm_src = IMM_U;
+                alu_src = 0; // won't use
+                alu_op = ALU_OP_NONE;
+                result_src = RESULT_U; 
+                mem_we = 0;
+                jump=0;
+                pc_target_src=0;
                 unknown_op = 0;
             end
             default ;
