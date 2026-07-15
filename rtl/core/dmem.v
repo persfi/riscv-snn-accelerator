@@ -33,3 +33,4 @@ module dmem # (
     //each word is 4 bytes, one index of mem hold 1 word, so the index is #DEPTH addr(in btyes)/4 
 
 endmodule
+

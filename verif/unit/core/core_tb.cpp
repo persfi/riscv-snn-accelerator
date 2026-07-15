@@ -324,5 +324,41 @@ int main() {
     CHECK_EQ(dut.pc_q, 0x00000020, "word 0x7f: pc advances to addi (0x20)");
     CHECK_EQ(dut.unknown_op, 0, "addi x4,x0,5: unknown_op =0 ");
 
+    //load: control decode -> regfile -> imm_gen -> alu (addr = rs1+imm) -> dmem -> load_ext (byte/half select + sign/zero extend) -> writeback.
+
+    load_hex(imem_arr, "verif/unit/core/load_vectors.hex", 1024);
+    load_hex(dmem_arr, "verif/unit/core/data.hex", 1024);
+
+    dut.rst = 1;
+    run(1);
+    dut.rst = 0;
+    tb.settle(); //fetch first load
+
+    run(1);
+    CHECK_REG(1, 0x00000004, "lb x1,4(x0): dmem[1] byte0 = 0x04");
+
+    run(1);
+    CHECK_REG(3, 0xffffffcc, "lb x3,0(x0): dmem[0] byte0 0xcc sign-extended (negative byte)");
+
+    run(1);
+    CHECK_REG(1, 0x00000009, "lh x1,5(x1): addr 9, addr[1]=0 -> low half of dmem[2] = 9");
+
+    run(1);
+    CHECK_REG(2, 0xffffabbb, "lh x2,20(x1): addr 29 low half 0xabbb, sign-extended");
+
+    run(1);
+    CHECK_REG(2, 0x00001236, "lh x2,22(x1): addr 31, addr[1]=1 -> high half 0x1236");
+
+    run(1);
+    CHECK_REG(2, 0x0000abbb, "lhu x2,20(x1): low half zero-extended");
+
+    run(1); //.word 0x7f (unknown op): no writeback; x1 is still used with the right value in the lbu below
+
+    run(1);
+    CHECK_REG(0, 0x00000000, "lw x0,3(x1): write to x0 discarded");
+
+    run(1);
+    CHECK_REG(1, 0x0000000c, "lbu x1,-8(x1): addr 1, byte lane 1 = 0x0c zero-extended (neg offset)");
+
     return tb_report();
 }

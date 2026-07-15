@@ -23,6 +23,7 @@ module core (
     wire [31:0] a;
     wire [31:0] alu_result;
     wire [31:0] dmem_rdata;
+    wire [31:0] load_data;
     wire [31:0] imm;
     wire [31:0] pc_target;
     wire [31:0] pc_target_sum;
@@ -129,9 +130,17 @@ module core (
 
     );
 
+    load_ext load_ext (
+        .rdata(dmem_rdata),
+        .addr_lo(alu_result[1:0]),
+        .funct3(inst[14:12]),
+        .load_data(load_data)
+    );
+
+
     mux_r mux_r (
         .alu_result(alu_result),
-        .dmem_rdata(dmem_rdata),
+        .load_data(load_data),
         .pc_plus4(pc_plus4),
         .imm(imm),
         .result_src(result_src),

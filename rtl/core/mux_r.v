@@ -1,6 +1,6 @@
 module mux_r (
     input [31:0] alu_result,
-    input [31:0] dmem_rdata,
+    input [31:0] load_data,
     input [31:0] pc_plus4,
     input [31:0] imm,
     input [1:0] result_src,
@@ -15,7 +15,7 @@ module mux_r (
         result = 0;
         case (result_src) 
             RESULT_ALU: result = alu_result;
-            RESULT_RDATA: result = dmem_rdata;
+            RESULT_RDATA: result = load_data;
             RESULT_PCP4: result = pc_plus4;
             RESULT_LUI: result = imm;
             default: ;
