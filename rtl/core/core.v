@@ -27,6 +27,7 @@ module core (
     wire [31:0] imm;
     wire [31:0] pc_target;
     wire [31:0] pc_target_sum;
+    wire [3:0] wstrb;
     wire pc_target_src;
     wire pc_src;
     wire branch_ctrl;
@@ -123,11 +124,17 @@ module core (
     dmem dmem (
         .clk(clk),
         .mem_we(mem_we),
-        .wstrb(4'b1111),
+        .wstrb(wstrb),
         .addr(alu_result),
         .wdata(rs2_data),
         .rdata(dmem_rdata)
 
+    );
+
+    wstrb_gen wstrb_gen (
+        .funct3(inst[14:12]),
+        .addr_lo(alu_result[1:0]),
+        .wstrb(wstrb)
     );
 
     load_ext load_ext (

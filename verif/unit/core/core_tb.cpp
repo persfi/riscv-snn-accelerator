@@ -360,5 +360,37 @@ int main() {
     run(1);
     CHECK_REG(1, 0x0000000c, "lbu x1,-8(x1): addr 1, byte lane 1 = 0x0c zero-extended (neg offset)");
 
+    //store: control decode -> regfile -> imm_gen -> alu (addr = rs1+imm) -> wstrb_gen (byte/half lane select) -> dmem masked write.
+    //store_vectors.hex is the instruction stream (imem). data.hex (reused) preloads dmem.
+    load_hex(imem_arr, "verif/unit/core/store_vectors.hex", 1024);
+    load_hex(dmem_arr, "verif/unit/core/data.hex", 1024);
+
+    dut.rst = 1;
+    run(1);
+    dut.rst = 0;
+    tb.settle(); //fetch first store setup lw
+
+    run(1); //lw x2,28(x0): x2 = 0x1236abbb
+    run(1); //lw x4,32(x0): x4 = 0x02347399
+    run(1); //lw x3,4(x0): x3 = 4
+
+    run(1);
+    CHECK_MEM(6, 0x00000004, "sw x3,23(x3): dmem[6] = x3 = 4");
+
+    run(1);
+    CHECK_MEM(6, 0x1236abbb, "sw x2,25(x0): dmem[6] fully overwritten with x2");
+
+    run(1);
+    CHECK_MEM(6, 0x123699bb, "sb x4,25(x0): addr_lo=1, lane1 = x4[7:0]=0x99");
+
+    run(1);
+    CHECK_MEM(6, 0x993699bb, "sb x4,23(x3): addr_lo=3, lane3 = x4[7:0]=0x99");
+
+    run(1);
+    CHECK_MEM(5, 0x0000abbb, "sh x2,20(x0): addr_lo=0, low half = x2[15:0]=0xabbb");
+
+    run(1);
+    CHECK_MEM(5, 0xabbbabbb, "sh x2,19(x3): addr_lo=3 -> upper half (addr_lo[0] ignored) = 0xabbb");
+
     return tb_report();
 }

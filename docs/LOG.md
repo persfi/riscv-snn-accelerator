@@ -110,3 +110,6 @@
 - figured in rv32ui test (ma_data) includes misaligned load and store. currently my project does not include misaligned address handling. In order to pass the test i have to do hardware misalign handling (doensn't fully support traps: no skip handler) → Decided to exclude it for now to prioritize the accelerator and the scheduler as that is the main goal of the project and misaligned address shouldn't be an issue for the project either.
 - wrote load_ext and unit test passed (22/22)
 - wrote loads datapath and test passed (92/92 in total for core) (nearly forgot the negative imm test). 
+
+## 2026-07-16
+- added store type datapath and test passed (98/98 in total for core).
