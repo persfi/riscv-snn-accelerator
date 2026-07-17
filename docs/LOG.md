@@ -113,3 +113,10 @@
 
 ## 2026-07-16
 - added store type datapath and test passed (98/98 in total for core).
+
+## 2026-07-17
+- learn more about linker concepts and how it organizes sections in tests (my tb didnt use it in previous tests because its just one .text file) → not going to use riscv tests linker because it starts with spike's(a riscv simulator) address base. using my own riscv test.h because theirs involve M-privilege mode's csr instructions. My core is a simple bare metal with no previledge setup, as my accelerator does not need any of them.
+- using my own custum loading but the test vectors are tohost pass/fail check are still riscv's.
+- generated linker and harness and passed all riscv tests(rv32ui) excluding ma_data and fence_i. 40/40 paseed, 2 excluded.
+- vscode autoformats the .h as c and deletes the blank space between .section .text.init; use clang format off/on guard to prevent it happening again. 
+- needs to prove the tst does report FAIL back tmrw by deliberately creating some errors in the rtl.
