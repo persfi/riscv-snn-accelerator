@@ -120,3 +120,8 @@
 - generated linker and harness and passed all riscv tests(rv32ui) excluding ma_data and fence_i. 40/40 paseed, 2 excluded.
 - vscode autoformats the .h as c and deletes the blank space between .section .text.init; use clang format off/on guard to prevent it happening again. 
 - needs to prove the tst does report FAIL back tmrw by deliberately creating some errors in the rtl.
+
+## 2026-07-18
+- did negative test, changed add → all failed (everything uses add including env boot). cjanged or and xor → only their own tests failed → proved that the test reflects correct pass/fail.
+
+
