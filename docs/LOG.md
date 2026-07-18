@@ -123,5 +123,5 @@
 
 ## 2026-07-18
 - did negative test, changed add → all failed (everything uses add including env boot). cjanged or and xor → only their own tests failed → proved that the test reflects correct pass/fail.
-
+- updated d4,d5 in DESIGN.md
 

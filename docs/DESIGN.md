@@ -35,3 +35,15 @@ Consider DE1-SoC for September port target (accelerator fabric, own core stays a
 **Rejected:** PicoRV32/FemtoRV as host.
 **Because:** The project aims to build the whole vertical stack, and a prebuilt core would leave the host side of the claim empty. Implementing the CPU also serves as structured practice for designing the accelerator's unscaffolded RTL.
 **Revisit if:** Core verification isn't converging by late July, then swap in PicoRV32 and let the accelerator be the entire project.
+
+### D4: What HDL to write in
+**Chose:** Verilog-2001
+**Rejected:** SystemVerilog (SV)
+**Because:** The smallest common language every tool in the flow fully supports. SV is a superset of Verilog, so learning it afterward is incremental; the reverse is harder, since Verilog forces the learner to face what SV simplifies away (combinational completeness, latch inference). 
+**Revisit if:** Future projects will likely use SV; this codebase stays Verilog-2001.
+
+### D5: What verification methodology to use
+**Chose:** Directed C++ testbenches per RTL block, the official riscv-tests suite as an external referee for the core.
+**Rejected:** UVM / constrained-random verification
+**Because:** UVM pays off at team scale (verification IP, component isolation, constrained-random coverage), needs commercial simulators Verilator can't replace, and oversizes the problem: nothing carries over between instructions on a single-cycle core, so directed tests and the compliance suite already cover the space.
+**Revisit if:** A team-scale project with commercial seats, or a pipelined core, where hazard × forwarding × flush combinations create the state space constrained-random was built for.
