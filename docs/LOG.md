@@ -125,3 +125,6 @@
 - did negative test, changed add → all failed (everything uses add including env boot). cjanged or and xor → only their own tests failed → proved that the test reflects correct pass/fail.
 - updated d4,d5 in DESIGN.md
 
+## 2026-07-19
+- added design decisions made during the building of rtl (D6, D7, D8).
+- learned about ctr0
