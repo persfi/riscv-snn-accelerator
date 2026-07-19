@@ -127,4 +127,5 @@
 
 ## 2026-07-19
 - added design decisions made during the building of rtl (D6, D7, D8).
+- added riscv test results in DESIGN.md.
 - learned about ctr0

@@ -73,3 +73,23 @@ Consider DE1-SoC for September port target (accelerator fabric, own core stays a
 **Rejected:** Routing comparison through the ALU (textbook structure).
 **Because:** The ALU was already verified at ten operations; routing branches through it reopens a verified block. The branch funct3 codes also don't map directly to the ALU's, so sharing also needs translation logic (the textbook wires branches to the ALU because it only implements BEQ, which needs just a subtract-and-check-zero). A dedicated comparator costs a small number of LUTs out of 63k.
 **Revisit if:** The core is pipelined.
+
+## 8. Verification
+
+### RISC-V core: riscv-tests results
+
+| Metric | Value |
+|---|---|
+| rv32ui tests run | 40 |
+| Passed | 40 |
+| Failed | 0 |
+| Excluded | 2 (ma_data, fence_i) |
+
+Run against the unmodified upstream rv32ui test bodies, via a minimal, CSR/trap-free environment (verif/env) built for this core.
+
+| Excluded test | Reason |
+|---|---|
+| ma_data | Checks the exact value of a misaligned load/store. Passing needs either real hardware support or a trap handler that decodes and emulates in software. The trap route also needs CSRs (mtvec/mepc/mcause), which the core doesn't have. The ISA allows trapping instead of hardware support, so excluding this is a scope decision, not a compliance gap. |
+| fence_i | Zifencei extension, not base RV32I, not needed for compliance. Split I and D memories (Harvard), so storing can never reach imem. |
+
+
