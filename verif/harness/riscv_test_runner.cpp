@@ -12,8 +12,8 @@
 // a single unified test image -- a fetch finds code in imem, a load finds data
 // in dmem, because both hold the whole image. See docs/DESIGN.md.
 
-#include "Vcore.h"
-#include "Vcore___024root.h"
+#include "Vsoc.h"
+#include "Vsoc___024root.h"
 #include "tb_harness.h"
 
 #include <cstdint>
@@ -32,10 +32,10 @@ int main(int argc, char** argv) {
     const uint64_t max_cycles =
         (argc > 3) ? std::strtoull(argv[3], nullptr, 0) : 200000;
 
-    Testbench<Vcore> tb("verif/build/core-sim/run.vcd");
+    Testbench<Vsoc> tb("verif/build/core-sim/run.vcd");
     auto& dut  = tb.top;
-    auto& imem = tb.top.rootp->core__DOT__imem__DOT__mem;
-    auto& dmem = tb.top.rootp->core__DOT__dmem__DOT__mem;
+    auto& imem = tb.top.rootp->soc__DOT__core__DOT__imem__DOT__mem;
+    auto& dmem = tb.top.rootp->soc__DOT__dmem__DOT__mem;
 
     // Depth is read straight from the Verilated array so it always tracks the
     // RTL's DEPTH parameter -- no second place to keep in sync.

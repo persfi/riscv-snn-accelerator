@@ -4,9 +4,20 @@ module core (
     input rst,
     output [31:0] pc_q,
     output [31:0] inst,
-    output unknown_op
+    output unknown_op,
+
+    output [31:0] d_addr,
+    output [31:0] d_wdata,
+    output        d_we,
+    output [3:0]  d_wstrb,
+    input  [31:0] d_rdata
 );
    
+    assign d_addr = alu_result;
+    assign d_wdata = rs2_data;
+    assign d_we = mem_we;
+    assign d_wstrb = wstrb;
+
     wire [31:0] pc_plus4; 
     wire [31:0] pc_next; 
     wire rd_we; 
@@ -22,7 +33,6 @@ module core (
     wire [31:0] b;
     wire [31:0] a;
     wire [31:0] alu_result;
-    wire [31:0] dmem_rdata;
     wire [31:0] load_data;
     wire [31:0] imm;
     wire [31:0] pc_target;
@@ -33,6 +43,7 @@ module core (
     wire branch_ctrl;
     wire jump;
     wire branch_taken;
+
     
     assign pc_plus4 = pc_q + 32'd4;
     assign pc_target_sum = (pc_target_src ? rs1_data : pc_q) + imm;
@@ -121,16 +132,6 @@ module core (
         .result(alu_result)
     );
 
-    dmem dmem (
-        .clk(clk),
-        .mem_we(mem_we),
-        .wstrb(wstrb),
-        .addr(alu_result),
-        .wdata(rs2_data),
-        .rdata(dmem_rdata)
-
-    );
-
     wstrb_gen wstrb_gen (
         .funct3(inst[14:12]),
         .addr_lo(alu_result[1:0]),
@@ -138,7 +139,7 @@ module core (
     );
 
     load_ext load_ext (
-        .rdata(dmem_rdata),
+        .rdata(d_rdata),
         .addr_lo(alu_result[1:0]),
         .funct3(inst[14:12]),
         .load_data(load_data)

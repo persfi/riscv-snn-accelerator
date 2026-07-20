@@ -43,4 +43,7 @@ localparam [1:0] RESULT_LUI = 2'b11;
 
 localparam [31:0] RESET_VECTOR = 32'h0000_0000;
 
+localparam [31:0] PRINT_ADDR = 32'h1000_0000;
+localparam [31:0] EXIT_ADDR  = 32'h1000_0004;
+
 //`endif

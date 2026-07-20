@@ -1,13 +1,13 @@
-#include "Vcore.h"
-#include "Vcore___024root.h"
+#include "Vsoc.h"
+#include "Vsoc___024root.h"
 #include "tb_harness.h"
 
 int main() {
-    Testbench<Vcore> tb("verif/build/core/core.vcd");
+    Testbench<Vsoc> tb("verif/build/core/core.vcd");
     auto& dut = tb.top;
-    auto& regs = tb.top.rootp->core__DOT__regfile__DOT__registers;
-    auto& dmem_arr = tb.top.rootp->core__DOT__dmem__DOT__mem;
-    auto& imem_arr = tb.top.rootp->core__DOT__imem__DOT__mem;
+    auto& regs = tb.top.rootp->soc__DOT__core__DOT__regfile__DOT__registers;
+    auto& dmem_arr = tb.top.rootp->soc__DOT__dmem__DOT__mem;
+    auto& imem_arr = tb.top.rootp->soc__DOT__core__DOT__imem__DOT__mem;
 
     //tick + print trace, no need for writing trace lines manually
     auto run = [&](int n) {

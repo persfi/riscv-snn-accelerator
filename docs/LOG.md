@@ -129,3 +129,9 @@
 - added design decisions made during the building of rtl (D6, D7, D8).
 - added riscv test results in DESIGN.md.
 - learned about ctr0
+
+## 2026-07-20
+- updated riscv test results in DESIGN.md.
+- seperated dmem from core so that soc can control and connect to accerator in the future.
+- print and exit are not part of dmem and dmem and imem are different memory that BOTH have everything the linker defines.
+- print only prints 1 byte.

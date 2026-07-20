@@ -16,6 +16,7 @@ ISA_DIR     := verif/riscv-tests/isa
 ENV_DIR     := verif/env
 MACROS_DIR  := $(ISA_DIR)/macros/scalar
 CORE_RTL    := $(shell find rtl/core -name '*.v')
+SOC_RTL     := $(CORE_RTL) rtl/soc/soc.v
 TB_DIR      := $(BUILD_DIR)/riscv-tests
 SIM_DIR     := $(BUILD_DIR)/core-sim
 SIM         := $(SIM_DIR)/core_sim
@@ -40,14 +41,16 @@ lint:
 test-unit:
 	@test -n "$(BLOCK)" || (echo "usage: make test-unit BLOCK=<module_name>"; exit 1)
 	$(eval RTL_FILE := $(shell find rtl -name '$(BLOCK).v'))
+	$(eval TOP_MODULE := $(if $(filter core,$(BLOCK)),soc,$(BLOCK)))
+	$(eval RTL_INPUTS := $(if $(filter core,$(BLOCK)),$(SOC_RTL),$(RTL_FILE)))
 	@test -n "$(RTL_FILE)" || (echo "no rtl module named $(BLOCK).v under rtl/"; exit 1)
 	mkdir -p $(BUILD_DIR)/$(BLOCK)
 	verilator --cc --exe --build -Wall --trace \
-		-I$(dir $(RTL_FILE)) \
+		--top-module $(TOP_MODULE) -Irtl/core -I$(dir $(RTL_FILE)) \
 		-CFLAGS "-I$(CURDIR)/verif/harness" \
 		--Mdir $(BUILD_DIR)/$(BLOCK) \
 		-o $(BLOCK)_tb \
-		$(RTL_FILE) verif/unit/$(BLOCK)/$(BLOCK)_tb.cpp 
+		$(RTL_INPUTS) verif/unit/$(BLOCK)/$(BLOCK)_tb.cpp
 	$(BUILD_DIR)/$(BLOCK)/$(BLOCK)_tb
 
 dump-asm:
@@ -67,12 +70,12 @@ hex:
 
 # Verilate the core + the riscv-tests runner into one sim executable. Loads the
 # test hex at runtime, so it's built once and reused across all tests.
-$(SIM): $(CORE_RTL) verif/harness/riscv_test_runner.cpp verif/harness/tb_harness.h
+$(SIM): $(SOC_RTL) verif/harness/riscv_test_runner.cpp verif/harness/tb_harness.h
 	@mkdir -p $(SIM_DIR)
-	verilator --cc --exe --build -Wall --trace --top-module core \
+	verilator --cc --exe --build -Wall --trace --top-module soc \
 		-Irtl/core -CFLAGS "-I$(CURDIR)/verif/harness" \
 		--Mdir $(SIM_DIR) -o core_sim \
-		$(CORE_RTL) verif/harness/riscv_test_runner.cpp
+		$(SOC_RTL) verif/harness/riscv_test_runner.cpp
 
 # Assemble+link one official rv32ui test against our minimal env (0x0 base, no
 # CSRs), then flatten to $readmemh hex. Keeps the .elf so we can read tohost.
@@ -107,6 +110,4 @@ test-core: $(SIM) $(addprefix $(TB_DIR)/,$(addsuffix .hex,$(RV32UI)))
 	test -z "$$failed" || { echo "failed:$$failed"; exit 1; }
 
 .PHONY: freeze clean lint test-unit dump-asm hex test-core test-core-one
-
-
 
