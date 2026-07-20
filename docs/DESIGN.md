@@ -92,4 +92,6 @@ Run against the unmodified upstream rv32ui test bodies, via a minimal, CSR/trap-
 | ma_data | Checks the exact value of a misaligned load/store. Passing needs either real hardware support or a trap handler that decodes and emulates in software. The trap route also needs CSRs (mtvec/mepc/mcause), which the core doesn't have. The ISA allows trapping instead of hardware support, so excluding this is a scope decision, not a compliance gap. |
 | fence_i | Zifencei extension, not base RV32I, not needed for compliance. Split I and D memories (Harvard), so storing can never reach imem. |
 
+**Negative control:** Broke `add` (used everywhere, including boot) and all 40 tests failed; broke `or` and `xor` individually and only their own tests failed. Confirms the tohost signal detects real failures, not a rubber stamp.
+
 
