@@ -135,3 +135,9 @@
 - seperated dmem from core so that soc can control and connect to accerator in the future.
 - print and exit are not part of dmem and dmem and imem are different memory that BOTH have everything the linker defines.
 - print only prints 1 byte.
+
+## 2026-07-21
+- updates soc harness via CC (infrastructure)
+- wrote harness_test.S to test print and exit, both works.
+- caps S so I can use define/include/any thing that needs to run with preprocessor
+- li loads 32 bit immediate (lui+addi) 

@@ -20,6 +20,10 @@ SOC_RTL     := $(CORE_RTL) rtl/soc/soc.v
 TB_DIR      := $(BUILD_DIR)/riscv-tests
 SIM_DIR     := $(BUILD_DIR)/core-sim
 SIM         := $(SIM_DIR)/core_sim
+
+# --- bare-metal app runner --------------------------------------------------
+RUN_DIR     := $(BUILD_DIR)/soc-run
+SOC_RUN     := $(RUN_DIR)/soc_run
 # Excluded, pre-committed (docs/DESIGN.md): ma_data (misaligned, stricter than
 # the ISA mandates) and fence_i (Zifencei, meaningless on split memory).
 RVTEST_EXCLUDE := ma_data fence_i
@@ -77,6 +81,22 @@ $(SIM): $(SOC_RTL) verif/harness/riscv_test_runner.cpp verif/harness/tb_harness.
 		--Mdir $(SIM_DIR) -o core_sim \
 		$(SOC_RTL) verif/harness/riscv_test_runner.cpp
 
+# Verilate the SoC + the bare-metal app runner into one sim executable. Built
+# once and reused; loads the program hex at runtime.
+$(SOC_RUN): $(SOC_RTL) verif/harness/soc_runner.cpp verif/harness/tb_harness.h
+	@mkdir -p $(RUN_DIR)
+	verilator --cc --exe --build -Wall --trace --top-module soc \
+		-Irtl/core -CFLAGS "-I$(CURDIR)/verif/harness" \
+		--Mdir $(RUN_DIR) -o soc_run \
+		$(SOC_RTL) verif/harness/soc_runner.cpp
+
+# Run a prebuilt program hex on the SoC, e.g.
+#   make hex FILE=sw/apps/hello.S OUT=verif/build/hello.hex
+#   make run-hex HEX=verif/build/hello.hex
+run-hex: $(SOC_RUN)
+	@test -n "$(HEX)" || (echo "usage: make run-hex HEX=<program.hex> [MAX=<cycles>]"; exit 1)
+	$(SOC_RUN) $(HEX) $(MAX)
+
 # Assemble+link one official rv32ui test against our minimal env (0x0 base, no
 # CSRs), then flatten to $readmemh hex. Keeps the .elf so we can read tohost.
 $(TB_DIR)/%.hex: $(ISA_DIR)/rv32ui/%.S $(ENV_DIR)/link.ld $(ENV_DIR)/riscv_test.h
@@ -109,5 +129,5 @@ test-core: $(SIM) $(addprefix $(TB_DIR)/,$(addsuffix .hex,$(RV32UI)))
 	echo "rv32ui: $$pass passed, $$fail failed  (excluded:$(addprefix ,$(RVTEST_EXCLUDE)))"; \
 	test -z "$$failed" || { echo "failed:$$failed"; exit 1; }
 
-.PHONY: freeze clean lint test-unit dump-asm hex test-core test-core-one
+.PHONY: freeze clean lint test-unit dump-asm hex run-hex test-core test-core-one
 
