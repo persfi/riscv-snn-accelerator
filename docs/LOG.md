@@ -141,3 +141,4 @@
 - wrote harness_test.S to test print and exit, both works.
 - caps S so I can use define/include/any thing that needs to run with preprocessor
 - li loads 32 bit immediate (lui+addi) 
+- added crt0 and linker. inf loop in asm can be written as 1: j 1b (jump backwards to label 1)
