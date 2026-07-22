@@ -145,6 +145,9 @@
 
 ## 2026-07-22
 - x1 is ra that ret jumps back to, shouldn't be used to save other values in the assembly.
-- la = load address = auipc + addi. sometimes the linker collapes 2 instruction from a pseudo instruction to one ex, only loading 12 bits is enough
+- la = load address = auipc + addi. sometimes the linker collapes 2 instruction from a pseudo instruction to one(linker relaxation). ex, only loading 12 bits is enough
 - assemblers current section default to .text, since text init is declare in crt0, crt0 is placed in section .text.init
-
+- tested hello.c and computation.c, hello prints hello world (71cycles), computation.c computes dot product of arrray (185cycles). switched * to + in computation.c cycles decrease to 73 (185-73=112; 112/5=22.4), around +23 for multiplication (as my core is rv32i not rv32im theres no dedicated multiplier so it uses a combination of current instructions)(calls to __mulsi3, a software routine in libgcc)
+- avergae latency for multiplication is 22.4 but it is data dependant so each multiplication costs different cycles
+- added assert at _end to make sure the theres at least 256 bytes between the end and stack top. 
+- switched the stack top linker file order to the bottom, to prevent future confusion of the fact that it is higher than _end.
