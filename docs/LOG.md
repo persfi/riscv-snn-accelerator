@@ -142,3 +142,9 @@
 - caps S so I can use define/include/any thing that needs to run with preprocessor
 - li loads 32 bit immediate (lui+addi) 
 - added crt0 and linker. inf loop in asm can be written as 1: j 1b (jump backwards to label 1)
+
+## 2026-07-22
+- x1 is ra that ret jumps back to, shouldn't be used to save other values in the assembly.
+- la = load address = auipc + addi. sometimes the linker collapes 2 instruction from a pseudo instruction to one ex, only loading 12 bits is enough
+- assemblers current section default to .text, since text init is declare in crt0, crt0 is placed in section .text.init
+

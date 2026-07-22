@@ -97,6 +97,36 @@ run-hex: $(SOC_RUN)
 	@test -n "$(HEX)" || (echo "usage: make run-hex HEX=<program.hex> [MAX=<cycles>]"; exit 1)
 	$(SOC_RUN) $(HEX) $(MAX)
 
+# --- bare-metal apps (sw/apps + sw/bsp) -------------------------------------
+SW_DIR   := $(BUILD_DIR)/sw
+BSP      := sw/bsp
+LDSCRIPT := $(BSP)/linker.ld
+CRT0     := $(BSP)/crt0.S
+# An app may be asm or C; take whichever exists.
+APP_SRC   = $(firstword $(wildcard sw/apps/$(APP).S sw/apps/$(APP).c))
+
+# Build crt0 + the app against the bsp, then flatten to $readmemh hex.
+# -lgcc goes last: -nostdlib omits it, but C multiply/divide lower to libgcc
+# helpers (__mulsi3, __divsi3), which are plain RV32I and run on the core.
+sw-build:
+	@test -n "$(APP)" || (echo "usage: make sw-build APP=<name>  (sw/apps/<name>.S or .c)"; exit 1)
+	@test -n "$(APP_SRC)" || (echo "no sw/apps/$(APP).S or sw/apps/$(APP).c"; exit 1)
+	@mkdir -p $(SW_DIR)
+	$(CC) $(ARCH_FLAGS) -O1 -nostdlib -nostartfiles -I$(BSP) \
+		-T$(LDSCRIPT) $(CRT0) $(APP_SRC) -o $(SW_DIR)/$(APP).elf -lgcc
+	$(OBJCOPY) -O binary $(SW_DIR)/$(APP).elf $(SW_DIR)/$(APP).bin
+	od -An -tx4 --endian=little -v $(SW_DIR)/$(APP).bin > $(SW_DIR)/$(APP).hex
+
+# Read the ELF before running it: symbol map, section addresses, disassembly.
+sw-dump: sw-build
+	@echo "== symbols (address order) =="; $(NM) -n $(SW_DIR)/$(APP).elf
+	@echo; echo "== sections =="; $(OBJDUMP) -h $(SW_DIR)/$(APP).elf
+	@echo; echo "== disassembly =="; $(OBJDUMP) -d $(SW_DIR)/$(APP).elf
+
+# Build and run on the SoC, e.g. `make sw-app APP=hello`.
+sw-app: sw-build $(SOC_RUN)
+	$(SOC_RUN) $(SW_DIR)/$(APP).hex $(MAX)
+
 # Assemble+link one official rv32ui test against our minimal env (0x0 base, no
 # CSRs), then flatten to $readmemh hex. Keeps the .elf so we can read tohost.
 $(TB_DIR)/%.hex: $(ISA_DIR)/rv32ui/%.S $(ENV_DIR)/link.ld $(ENV_DIR)/riscv_test.h
@@ -129,5 +159,5 @@ test-core: $(SIM) $(addprefix $(TB_DIR)/,$(addsuffix .hex,$(RV32UI)))
 	echo "rv32ui: $$pass passed, $$fail failed  (excluded:$(addprefix ,$(RVTEST_EXCLUDE)))"; \
 	test -z "$$failed" || { echo "failed:$$failed"; exit 1; }
 
-.PHONY: freeze clean lint test-unit dump-asm hex run-hex test-core test-core-one
+.PHONY: freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one
 
