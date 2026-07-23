@@ -151,3 +151,8 @@
 - avergae latency for multiplication is 22.4 but it is data dependant so each multiplication costs different cycles
 - added assert at _end to make sure the theres at least 256 bytes between the end and stack top. 
 - switched the stack top linker file order to the bottom, to prevent future confusion of the fact that it is higher than _end.
+
+## 2026-07-23
+- go through snn torch tutorials.
+- snn neurons pass down either spike or non-spike, spike = 1*weight = w, non-spike = 0, no multiplication needed
+- snn data is the most well documented and tested mnist, its 28x28=784 pixels, each has a probability of spike event depending on its pixel values. per event cost is fixed → is the next layer has 128 neurons, it will do 128 accumulative additions to the membrance of each neuron (1*weight = wight. where theres 128 weights). 
