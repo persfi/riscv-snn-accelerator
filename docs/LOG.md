@@ -156,3 +156,13 @@
 - go through snn torch tutorials.
 - snn neurons pass down either spike or non-spike, spike = 1*weight = w, non-spike = 0, no multiplication needed
 - snn data is the most well documented and tested mnist, its 28x28=784 pixels, each has a probability of spike event depending on its pixel values. per event cost is fixed → is the next layer has 128 neurons, it will do 128 accumulative additions to the membrance of each neuron (1*weight = wight. where theres 128 weights). 
+
+## 2026-07-24
+- post training quantization for trained weights in software before loading them into mem bc it doesn't take floats.
+- wrote lif (leaky integrate and fire) specs, pre designed number of bits of each symbols
+- soft reset for exceeding threshold, decision docs in lif spec, which will be integrated into design md soon.
+- leak constant beta will be done with V -= V>>k, which can be done without multipliers and as beta is a hyperparameter it is free to set. 
+- if accumalation still exceeds 16bits after subtracting soft reset, clamp it within 16bits. safety net for overflow that might result in sign flips, but if clamping occurs too often or it visibly affects model accuracy, i should change weight scaling and make it smaller.
+- leak (decay) with old membrane first before accumulation then threshold detection.
+- spike encoding decision.
+- before running accelerator, total cycle count should be predictable (predictable after ptq, encoding, and scheduler toolchain).
