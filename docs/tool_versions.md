@@ -20,3 +20,5 @@
 - pytest    9.1.1
 - snntorch  1.0.0
 - torch     2.12.1+cpu
+- matplotlib 3.11.1
+- torchvision 0.27.1+cpu

@@ -166,3 +166,11 @@
 - leak (decay) with old membrane first before accumulation then threshold detection.
 - spike encoding decision.
 - before running accelerator, total cycle count should be predictable (predictable after ptq, encoding, and scheduler toolchain).
+
+## 2026-07-25
+- did lif_probe to check snn runs the steps as it says in its docs, leak>accumulate>fire, and checked that reset delay false does perform the reset immediately in the same timestep → all test passed
+- chose immediate reset timing → no real benefit for delay which needs to forward another bit for previous state
+- decided qat over ptq. qat trains what the hardware deploys and has better accuracy with slightly more complicated software (STE)
+- installed torchvision for handling mnist and matplotlib for loss epoch graphing later.
+- accidentally deleted a line of the snntorch library while reading it → fixed it. remember not to edit packages.
+- no bias for the linear model because theres no continuous current that needs to be added in the lif equation
