@@ -1,6 +1,7 @@
 .venv/
 __pycache__/
 /model/training/.data/
+/model/training/runs/
 CLAUDE.md
 AGENTS.md
 .claude/

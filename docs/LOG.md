@@ -174,3 +174,10 @@
 - installed torchvision for handling mnist and matplotlib for loss epoch graphing later.
 - accidentally deleted a line of the snntorch library while reading it → fixed it. remember not to edit packages.
 - no bias for the linear model because theres no continuous current that needs to be added in the lif equation
+
+## 2026-07-26
+- the forward of ste and forward of ratesnn is different. the ste one does the integer rounding while the ratesnn forward is the actual one that defines forward pass between all layers
+- trained snn, 0.9762 test accuracy for k=2
+- init_leaky is deprecated → replaced by reset_mem
+- reset_mem resets the membrane per sample; each sample within a batch is trained in parallel with the others; samples are trained from T:0-20 before moving on to the next batch.
+- done snn training apart from k sweep to choose the one with the best accuracy performance
