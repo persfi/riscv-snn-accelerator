@@ -1,0 +1,147 @@
+{
+  "run": "model/training/runs/snn_h128_k2_T20",
+  "seed": 0,
+  "n_images": 10,
+  "image_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "index_order": "((image * T) + t) * width + neuron",
+  "T": 20,
+  "k": 2,
+  "v_th_int": {
+    "fc1": 248,
+    "fc2": 295
+  },
+  "sizes": {
+    "input": 784,
+    "hidden": 128,
+    "output": 10
+  },
+  "weights_sha256": {
+    "fc1": "672be47d7b3bb41c",
+    "fc2": "d46758df8dd6b20c"
+  },
+  "files": {
+    "s_in": {
+      "file": "s_in.hex",
+      "shape": [
+        10,
+        20,
+        784
+      ],
+      "digits": 1,
+      "note": "input spikes, 0/1"
+    },
+    "ev_idx": {
+      "file": "ev_idx.hex",
+      "shape": [
+        18030
+      ],
+      "digits": 3,
+      "note": "firing input indices, concatenated"
+    },
+    "ev_len": {
+      "file": "ev_len.hex",
+      "shape": [
+        10,
+        20
+      ],
+      "digits": 3,
+      "note": "events per (image,timestep)"
+    },
+    "acc1": {
+      "file": "acc1.hex",
+      "shape": [
+        10,
+        20,
+        128
+      ],
+      "digits": 8,
+      "note": "fc1 drained weight sums, int32"
+    },
+    "v1": {
+      "file": "v1.hex",
+      "shape": [
+        10,
+        20,
+        128
+      ],
+      "digits": 4,
+      "note": "fc1 membrane after update, int16"
+    },
+    "spk1": {
+      "file": "spk1.hex",
+      "shape": [
+        10,
+        20,
+        128
+      ],
+      "digits": 1,
+      "note": "fc1 spikes, 0/1"
+    },
+    "acc2": {
+      "file": "acc2.hex",
+      "shape": [
+        10,
+        20,
+        10
+      ],
+      "digits": 8,
+      "note": "fc2 drained weight sums, int32"
+    },
+    "v2": {
+      "file": "v2.hex",
+      "shape": [
+        10,
+        20,
+        10
+      ],
+      "digits": 4,
+      "note": "fc2 membrane after update, int16"
+    },
+    "spk2": {
+      "file": "spk2.hex",
+      "shape": [
+        10,
+        20,
+        10
+      ],
+      "digits": 1,
+      "note": "fc2 spikes, 0/1"
+    },
+    "counts": {
+      "file": "counts.hex",
+      "shape": [
+        10,
+        10
+      ],
+      "digits": 8,
+      "note": "output spike totals over T, int32"
+    },
+    "pred": {
+      "file": "pred.hex",
+      "shape": [
+        10
+      ],
+      "digits": 1,
+      "note": "golden argmax classification"
+    },
+    "labels": {
+      "file": "labels.hex",
+      "shape": [
+        10
+      ],
+      "digits": 1,
+      "note": "MNIST ground truth"
+    }
+  }
+}

@@ -36,6 +36,18 @@ freeze:
 clean:
 	rm -rf verif/build
 
+# --- golden model -----------------------------------------------------------
+GOLDEN_RUN := model/training/runs/snn_h128_k2_T20
+VECTOR_N   := 10
+
+vectors:
+	$(PYTHON) model/golden/export_vectors.py --run $(GOLDEN_RUN) --n $(VECTOR_N)
+
+check-golden:
+	$(PYTHON) model/golden/check_vs_float.py --run $(GOLDEN_RUN) --n 10000
+	$(PYTHON) model/golden/rate_code.py
+	$(PYTHON) model/golden/golden.py --run $(GOLDEN_RUN) --check-invariance --n 1000
+
 lint:
 	@for f in $(RTL_SOURCES); do \
 		echo "== $$f =="; \

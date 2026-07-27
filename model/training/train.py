@@ -67,7 +67,7 @@ def main():
     p.add_argument("--input", type=int, default=784)
     p.add_argument("--hidden", type=int, default=128)
     p.add_argument("--output", type=int, default=10)
-    p.add_argument("--k", type=int, default=2)
+    p.add_argument("--k", type=int, default=2 )
     p.add_argument("--T", type=int, default=20)
     p.add_argument("--v-th", type=float, default=1.0) #snn default
     p.add_argument("--epochs", type=int, default=15)
@@ -83,7 +83,7 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     name = args.name or f"snn_h{args.hidden}_k{args.k}_T{args.T}"
     run_dir = Path("model/training/runs") / name
-    run_dir.mkdir(parents=True, exist_ok=True)
+    run_dir.mkdir(parents=True, exist_ok=True) #make secondary run directory
 
     model = RateSNN(args.input, args.hidden, args.output,
                     k=args.k, T=args.T, v_th=args.v_th).to(device)

@@ -181,3 +181,13 @@
 - init_leaky is deprecated → replaced by reset_mem
 - reset_mem resets the membrane per sample; each sample within a batch is trained in parallel with the others; samples are trained from T:0-20 before moving on to the next batch.
 - done snn training apart from k sweep to choose the one with the best accuracy performance
+
+## 2026-07-27
+- loop through k from 1-5, chose k=2 for the leak beta because it has the second higher val accuracy compared to k=4 but way more stable that k=4 over epochs. although the differences in accuracy between the k varies very little so its not an important decision
+- created golden model (rate_code, lif, and golden)
+- used rng with seed for spike encoding, but realized that it differs if the batch differs, because it goes through every image per timestep before moving on to the next timestep, so if batch size increases, it will go through extra images (pixels) and the order of the generation will differ → switched to Thomas Wang's 32-bit integer hash generation method. because u is uniformly distributed from 0 to 255, the condition u < pixel creates a Bernoulli spike with probability pixel / 256 → (seed, image, timestep, pixel) ensures every pixel produced the same u
+- batch doesnt matter in golden bc its pure inference
+- decided that encoding and first quueuing of spikes should be done by c in core, or else its a whole new chunk of rtl. if there's time after completion, i can build it on the accelerator.
+- the accel is a fsm and the core should only boot it and read its result
+- exported golden model vectors for accel check in the future.
+- check golden model against training snn and verified that the accuracy does not much with minor differences in weights, threholds, leak etc (that comes from converting float to int system)
