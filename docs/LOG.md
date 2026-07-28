@@ -191,3 +191,7 @@
 - the accel is a fsm and the core should only boot it and read its result
 - exported golden model vectors for accel check in the future.
 - check golden model against training snn and verified that the accuracy does not much with minor differences in weights, threholds, leak etc (that comes from converting float to int system)
+
+
+## 2026-07-28
+- studying possible accelerator design, figured that the counts.hex was in 32 bits, while the max count for each image is only 20(0or1 per timestep) → change to 8 bits

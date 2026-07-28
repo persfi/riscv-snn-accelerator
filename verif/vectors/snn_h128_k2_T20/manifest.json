@@ -124,8 +124,8 @@
         10,
         10
       ],
-      "digits": 8,
-      "note": "output spike totals over T, int32"
+      "digits": 2,
+      "note": "output spike totals over T"
     },
     "pred": {
       "file": "pred.hex",

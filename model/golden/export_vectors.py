@@ -98,7 +98,7 @@ def main():
     emit("acc2",   stack_trace(trace, "acc2"),    8, "fc2 drained weight sums, int32")
     emit("v2",     stack_trace(trace, "v2"),      4, "fc2 membrane after update, int16")
     emit("spk2",   stack_trace(trace, "spk2"),    1, "fc2 spikes, 0/1")
-    emit("counts", counts,                        8, "output spike totals over T, int32")
+    emit("counts", counts,                        2, "output spike totals over T") #max T=20
     emit("pred",   pred,                          1, "golden argmax classification")
     emit("labels", labels[idx].astype(np.int32),  1, "MNIST ground truth")
 
