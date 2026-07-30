@@ -214,5 +214,7 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - weight address is {idx, word_cnt}, a concatenation, not i*32+j — works because 32 is <<5 and word_cnt = [4:0]. by concatenating them its equivalent to shift idx <<5 and + cnt
 - sequencer state is 2 orthogonal bits: layer_state (0=L1) and act_state (0=drain),plus outer states for idle/wait/done.
 - accel keeps its own t because its gap between core t varies from 1 to 2
-- spk1_we_ptr also serves as spk1_len bc after existing the push to queue nothign updates it and it holds spk1_len.
+- spk1_wr_ptr also serves as spk1_len bc after existing the push to queue nothign updates it and it holds spk1_len.
+- add mmio ports for accel
+-  the host only encodes and fills the ev mem whenever theres space: its t has no relation to what stage the accel is at
 
