@@ -192,6 +192,13 @@
 - exported golden model vectors for accel check in the future.
 - check golden model against training snn and verified that the accuracy does not much with minor differences in weights, threholds, leak etc (that comes from converting float to int system)
 
-
 ## 2026-07-28
 - studying possible accelerator design, figured that the counts.hex was in 32 bits, while the max count for each image is only 20(0or1 per timestep) → change to 8 bits
+
+## 2026-07-29
+- weight takes 1\*(784\*128+128*10) =101632bytes, 101632\*8/64=12704 lutram. only slicem luts can be used as lutram, which allows combianational read values from address. The utilization of lutram can only be seen during synthesis of the fpga, but since its a rather large amount of lutrams, directing it to bram would be safer, in case it doesnt work during synthesis. bram can only do synchronous read, so every read needs 1 clk cycle.
+- decided to put the 128/10 v_i[t] (membrane) and acc in register. arty a7 100t has 126800 flipflops, accumulation needs 128\*32 while membrance needs 128\*16, core uses 32\*32 → 7168 in total, thats only 5.7%
+- decided to load 1 word(4weights) of weights from bram every cycle, so if acc and v is in bram too itll need 3 more cycles to complete the read and perform combinational add with the weights → register allows combinational read → solves problem.
+- ev_idx should be stored as lutram so it could be read combinationally. its not a register bc reg are independant ev_idx
+- drew acellrator drain logic datapath
+
