@@ -202,3 +202,17 @@
 - ev_idx should be stored as lutram so it could be read combinationally. its not a register bc reg are independant ev_idx
 - drew acellrator drain logic datapath
 
+## 2026-07-30
+- finish datapath design apart from sequenecer because it connects to too many things on the datapath and drawing it would just make the graph more difficult to interpret visually.
+- leak and fire combines in lif unit. doesnt actually need to leak then drain then fire in hardware path, as long as the leak and fire's required data(v, acc) doesnt get over written it can be put together.
+- acc_mem = reg / weight_mem = bram / v_mem = reg / ev_mem = lutram / spk1 = lutram
+- sweep and drain all process 4 neurons at once (takes 1 word from address)
+- spike push: 4 lanes can fire in one cycle but spk1 takes one index/cycle. loop i
+over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriting v. worst case is 5 cycles/group which is highly unlikely (4 consecutive fires)
+- acc_mem is shared between layer1 and layer2, vmem cant becasue vmem persists through timesteps so theres v1,v2
+- ev_mem gets 2 banks so host fills B while accel drains A -> so that accel doesnt have to wait for host to fill from t=1-19
+- weight address is {idx, word_cnt}, a concatenation, not i*32+j — works because 32 is <<5 and word_cnt = [4:0]. by concatenating them its equivalent to shift idx <<5 and + cnt
+- sequencer state is 2 orthogonal bits: layer_state (0=L1) and act_state (0=drain),plus outer states for idle/wait/done.
+- accel keeps its own t because its gap between core t varies from 1 to 2
+- spk1_we_ptr also serves as spk1_len bc after existing the push to queue nothign updates it and it holds spk1_len.
+
