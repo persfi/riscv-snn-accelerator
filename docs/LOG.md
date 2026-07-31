@@ -218,3 +218,8 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - add mmio ports for accel
 -  the host only encodes and fills the ev mem whenever theres space: its t has no relation to what stage the accel is at
 
+## 2026-07-31
+- changed mmio. ev and weight should be passed to accel by mmio and accel stores it in its mem array (which are lutram and bram respectively). 
+- uses BASE + 4u*(i) so each word has its own addr, and that addr decodes into the idx of the mem array. the addr doesnt hold anything, only the array does.
+- chose that over an auto-increment port (one fixed addr + ptr) bc direct addressing is readable to host, accel would also be free of the ptr reg.
+- updated design decisions notes thatll be written to design md soon
