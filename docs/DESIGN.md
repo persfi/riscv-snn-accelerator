@@ -1,6 +1,70 @@
 
+## 1. System Architecture 
 
-## 1. Decisions & Rejected Alternatives
+### Memory map
+
+Instruction Space  (fetched by PC)
+
+|Address| Size | Region | Access |
+| ------|-------- | -------  | ------- |
+|0x0000_0000 – 0x0000_0FFF|4 KB |imem|R|
+
+Data Space  (load/store)
+
+|Address| Size | Region | Access |
+| ------|-------- | -------  | ------- |
+|0x0000_0000 – 0x0000_0FFF| 4KB | dmem | R/W|
+|0x1000_0000| 4B | PRINT | W |
+|0x1000_0004| 4B| EXIT| W|
+|0x2000_0000 – 0x2000_0FFF| 4KB | accel control| R/W|
+|0x2000_1000 – 0x2000_1FFF| 4KB| event bank A|W|
+|0x2000_2000 – 0x2000_2FFF| 4KB| event bank B|W|
+|0x2002_0000 – 0x2003_FFFF| 128KB |w1| W|
+|0x2004_0000 – 0x2004_0FFF| 4KB |w2| W|
+
+### Host & Accelerator Interface
+
+Registers
+All within the accelerator control region, so addresses are `0x2000_0000 + offset`.
+
+|Address| Name | Kind | Access | Bits | Meaning |
+| ------|-------- | -------  | ------- |------- |------- |
+|0x2000_0010 |T|config| W | 5 |timesteps per image, 1..31|
+|0x2000_0014 |VTH1 |config | W | 16 | layer 1 threshold, signed|
+|0x2000_0018 |VTH2 |config | W | 16 |layer 2 threshold, signed|
+|0x2000_001C | K |config| W | 3 | parameter for leak shift, 1..5|
+|0x2000_0030 |L1_SHIFT|config| W | 3 | log2(hidden_neurons/4), 3..5|
+|0x2000_0020 | START |doorbell|W| — |  begin image; data ignored|
+|0x2000_0024 | EVA_LEN |doorbell|W | 10 | store count and mark bank A full, 0..784|
+|0x2000_0028 | EVB_LEN|doorbell| W | 10 | store count and mark bank B full, 0..784|
+|0x2000_002C | STATUS| status| R | 3 |bit0 bank_a_free, bit1 bank_b_free, bit2 image_done|
+|0x2000_0040 + 4i | COUNT[i]|result | R | 8 | output spike count for class i, 0..T|
+
+Shared Regions
+
+|Region| Memory | Written By | Read By | Concurrent |
+| ------|-------- | -------  | ------- |------- |
+|ev bank A |LUTRAM| host, MMIO|drain| never (2 separate banks)|
+|ev bank B |LUTRAM| host, MMIO| drain| never (2 separate banks)|
+|w1|BRAM| host, at boot|drain|never |
+|w2|BRAM| host, at boot|drain|never |
+
+### Sequence
+
+```
+boot:       L1_SHIFT, T, VTH1, VTH2, K
+            fill w1[0..25087], w2[0..511]
+
+per image:  START
+            for t in 0..T-1:
+                wait STATUS.bank_free for the wanted bank
+                fill that bank with spike indices
+                write LEN
+            wait STATUS.image_done
+            read COUNT[0..9], argmax on the host
+```
+
+## 2. Decisions & Rejected Alternatives
 
 ### D1: What FPGA board to run on
 **Chose:** Arty A7 100T 

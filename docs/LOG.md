@@ -223,3 +223,8 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - uses BASE + 4u*(i) so each word has its own addr, and that addr decodes into the idx of the mem array. the addr doesnt hold anything, only the array does.
 - chose that over an auto-increment port (one fixed addr + ptr) bc direct addressing is readable to host, accel would also be free of the ptr reg.
 - updated design decisions notes thatll be written to design md soon
+
+## 2026-08-01
+- accel should be able to process models with a different hdden layer configuration (diff number of neurons). added accel_l1_shift to mmio, shift is for the weight addr decoding so accel doesnt have to do it by itself. shift 
+- _stack_top is actually just outside dmem and imem.
+- design md memory maps and host accel interface table and use sequences.
