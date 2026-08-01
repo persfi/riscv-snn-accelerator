@@ -22,6 +22,7 @@
 #define ACCEL_EVA_LEN_ADDR  (ACCEL_BASE + 0x24u)
 #define ACCEL_EVB_LEN_ADDR  (ACCEL_BASE + 0x28u)
 #define ACCEL_STATUS_ADDR   (ACCEL_BASE + 0x2Cu)
+#define ACCEL_L1_SHIFT_ADDR (ACCEL_BASE + 0x30u) 
 #define ACCEL_COUNT_ADDR    (ACCEL_BASE + 0x40u) // base of the ten output spike counters
 
 #define ACCEL_T             (*(volatile unsigned int *)(ACCEL_T_ADDR))
@@ -30,6 +31,7 @@
 #define ACCEL_K             (*(volatile unsigned int *)(ACCEL_K_ADDR))
 #define ACCEL_START         (*(volatile unsigned int *)(ACCEL_START_ADDR))
 #define ACCEL_STATUS        (*(volatile unsigned int *)(ACCEL_STATUS_ADDR))
+#define ACCEL_L1_SHIFT      (*(volatile unsigned int *)(ACCEL_L1_SHIFT_ADDR))
 
 #define ACCEL_EVA_LEN       (*(volatile unsigned int *)(ACCEL_EVA_LEN_ADDR))
 #define ACCEL_EVB_LEN       (*(volatile unsigned int *)(ACCEL_EVB_LEN_ADDR))
