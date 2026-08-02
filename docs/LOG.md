@@ -228,3 +228,10 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - accel should be able to process models with a different hdden layer configuration (diff number of neurons). added accel_l1_shift to mmio, shift is for the weight addr decoding so accel doesnt have to do it by itself. shift 
 - _stack_top is actually just outside dmem and imem.
 - design md memory maps and host accel interface table and use sequences.
+
+## 2026-08-02
+- wrote weight memory rtl for accelerator.
+- read data should also be <= non blocking as its bram so theres a read delay. And it should not be in a condition check because the mem should read no matter if its write or drain state, only the acc mem chooses not to udpate.
+- added accel scripts to lint harness.
+- w_mem_tb test 8/8 passed; weight_mem_tb test 5/5 passed.
+- forgot to check the read via layer_state, added it using read_at function to prove that the state select works.

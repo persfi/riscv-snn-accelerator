@@ -51,7 +51,7 @@ check-golden:
 lint:
 	@for f in $(RTL_SOURCES); do \
 		echo "== $$f =="; \
-		verilator --lint-only -Wall -Irtl/core $$f || exit 1; \
+		verilator --lint-only -Wall -Irtl/core -Irtl/accel $$f || exit 1; \
 	done
 
 test-unit:
