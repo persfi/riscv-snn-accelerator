@@ -235,3 +235,11 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - added accel scripts to lint harness.
 - w_mem_tb test 8/8 passed; weight_mem_tb test 5/5 passed.
 - forgot to check the read via layer_state, added it using read_at function to prove that the state select works.
+
+## 2026-08-03
+- wrote lif_unit rtl lint passed and test 19/19 passed.
+- forgot to check the v_th and k assignments that prove that they aren't hardcoded → added them → test passed
+- need another top module like the w_mem and weightmeme herirachy to control the layers state for lif_unit (k and v_th differs), also to control the stall and write spike to queue logic.
+- negative arithmetic shifts round away from zero when there is a remainder.
+- need to put $signed around part select v/acc and sign extended v/acc
+- my 'for' is procedural (uses = for combinational reads) in lif_unit so it needs to be inside 'always'.
