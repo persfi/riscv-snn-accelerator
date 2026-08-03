@@ -243,3 +243,4 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - negative arithmetic shifts round away from zero when there is a remainder.
 - need to put $signed around part select v/acc and sign extended v/acc
 - my 'for' is procedural (uses = for combinational reads) in lif_unit so it needs to be inside 'always'.
+- moved DESIGN.md to root for visibility.

@@ -10,7 +10,7 @@
 // Mirror memory model: the same image is loaded into BOTH imem and dmem, so a
 // Harvard core (separate instruction/data memories, no shared backing) can run
 // a single unified test image -- a fetch finds code in imem, a load finds data
-// in dmem, because both hold the whole image. See docs/DESIGN.md.
+// in dmem, because both hold the whole image. See DESIGN.md.
 
 #include "Vsoc.h"
 #include "Vsoc___024root.h"

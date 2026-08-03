@@ -24,7 +24,7 @@ SIM         := $(SIM_DIR)/core_sim
 # --- bare-metal app runner --------------------------------------------------
 RUN_DIR     := $(BUILD_DIR)/soc-run
 SOC_RUN     := $(RUN_DIR)/soc_run
-# Excluded, pre-committed (docs/DESIGN.md): ma_data (misaligned, stricter than
+# Excluded, pre-committed (DESIGN.md): ma_data (misaligned, stricter than
 # the ISA mandates) and fence_i (Zifencei, meaningless on split memory).
 RVTEST_EXCLUDE := ma_data fence_i
 RV32UI_ALL  := $(basename $(notdir $(wildcard $(ISA_DIR)/rv32ui/*.S)))
