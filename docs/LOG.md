@@ -244,3 +244,13 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - need to put $signed around part select v/acc and sign extended v/acc
 - my 'for' is procedural (uses = for combinational reads) in lif_unit so it needs to be inside 'always'.
 - moved DESIGN.md to root for visibility.
+
+## 2026-08-04
+- wrote counter lint and test 8/8 passed.
+- counter should be like w_mem, with a top module instantaniate diff counts.
+- mem in acc_mem is an unpacked array, can't part select across words → change it into a loop inside always → lint clean
+- wrote acc_mem lint and test 11/11 passed.
+- folded we and clear into a 2 bit ctrl so both cant be high at once
+- wrote acc_rdata[i+:32] instead of [i*32+:32] , resulting in it reading overlapping bits → caught the bug and fixed it
+- at first I wrote clear as 'else' after write, causing mem to clear whenever it's not writing. Might be harmless but more likely a bug in the future when theres cycles in drain thats not writing. → changed it to the 2 bit ctrl for safety.
+
