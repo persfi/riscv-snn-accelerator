@@ -260,3 +260,6 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - word_cnt needs to cap to 2 for the output layer (10 neurons, pad to 12, thats 3 words so 0,1,2 for word_cnt)
 - originally used 8 bit for base but the lanes*word_cnt is 32 bits which caused an error → widen base to 32 bits → fixed the error
 
+## 2026-08-06
+- wrote spk1.v lint and test 6/6 passed.
+- the sequencer handles wr_ptr (wr_addr)=0 and end which is spklen, and we comes from lif sweep 'stall'. spk1 is a reg mem array and takes 1 index per cycle so thats a 7 bits input wr_data. rd_addr never read and write at the same time so it'll be reuse (addr) with wr_addr: sequencer decides what state its at
