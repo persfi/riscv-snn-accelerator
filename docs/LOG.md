@@ -262,4 +262,6 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 
 ## 2026-08-06
 - wrote spk1.v lint and test 6/6 passed.
-- the sequencer handles wr_ptr (wr_addr)=0 and end which is spklen, and we comes from lif sweep 'stall'. spk1 is a reg mem array and takes 1 index per cycle so thats a 7 bits input wr_data. rd_addr never read and write at the same time so it'll be reuse (addr) with wr_addr: sequencer decides what state its at
+- the sequencer handles wr_ptr (wr_addr)=0 and end which is spklen, and we comes from lif sweep push logic. spk1 is a reg mem array and takes 1 index per cycle so thats a 7 bits input wr_data. rd_addr never read and write at the same time so it'll be reuse (addr) with wr_addr: sequencer decides what state its at 
+- wrote ev_mem.v lint and test 8/8 passed.
+- needs both wr and rd addr because they happen at the same time and points to different boxes. we also exist as not all core outputs that lands in ev mem address region are writes
