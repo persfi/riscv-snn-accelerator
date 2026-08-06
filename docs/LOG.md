@@ -265,3 +265,7 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - the sequencer handles wr_ptr (wr_addr)=0 and end which is spklen, and we comes from lif sweep push logic. spk1 is a reg mem array and takes 1 index per cycle so thats a 7 bits input wr_data. rd_addr never read and write at the same time so it'll be reuse (addr) with wr_addr: sequencer decides what state its at 
 - wrote ev_mem.v lint and test 8/8 passed.
 - needs both wr and rd addr because they happen at the same time and points to different boxes. we also exist as not all core outputs that lands in ev mem address region are writes
+- 0xaaaaaaaa is unsigned bc hex literal gets fit into int then unsigned int, 0xaaaaaaaa is beyond int so it becomes unsigned, which is why a cast to signed is needed.
+- wrote drain.v lint and test 4/4 passed
+- drain is pure alu, the addr generation and delay logic should be managed by sequencer.
+
