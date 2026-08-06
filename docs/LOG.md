@@ -254,3 +254,8 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - wrote acc_rdata[i+:32] instead of [i*32+:32] , resulting in it reading overlapping bits → caught the bug and fixed it
 - at first I wrote clear as 'else' after write, causing mem to clear whenever it's not writing. Might be harmless but more likely a bug in the future when theres cycles in drain thats not writing. → changed it to the 2 bit ctrl for safety.
 
+## 2026-08-05
+- wrote v_mem lint passed
+- combined v1 and v2 mem as it's small enough and when sequencer orders clean it should clean both at once, combining them simplifies the rtl.
+- word_cnt needs to cap to 2 for the output layer (10 neurons, pad to 12, thats 3 words so 0,1,2 for word_cnt)
+- originally used 8 bit for base but the lanes*word_cnt is 32 bits which caused an error → widen base to 32 bits → fixed the error
