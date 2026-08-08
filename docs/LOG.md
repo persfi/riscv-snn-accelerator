@@ -269,3 +269,5 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - wrote drain.v lint and test 4/4 passed
 - drain is pure alu, the addr generation and delay logic should be managed by sequencer.
 
+## 2026-08-07
+- changed export_vectors to emit weights that'll be loaded into accel (8bit and flat) → emitted the new w1 & w2 hex.

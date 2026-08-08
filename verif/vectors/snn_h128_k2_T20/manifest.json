@@ -142,6 +142,22 @@
       ],
       "digits": 1,
       "note": "MNIST ground truth"
+    },
+    "w1": {
+      "file": "w1.hex",
+      "shape": [
+        25088
+      ],
+      "digits": 8,
+      "note": "w1 image: 32 words per input, 4 int8 per word"
+    },
+    "w2": {
+      "file": "w2.hex",
+      "shape": [
+        512
+      ],
+      "digits": 8,
+      "note": "w2 image: 4 words per hidden neuron, padded from 3"
     }
   }
 }

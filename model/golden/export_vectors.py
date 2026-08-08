@@ -60,6 +60,23 @@ def event_lists(s_in):
     return idx.astype(np.int32), lens
 
 
+def pack_weights(w, words_per_src, lanes):
+    """Reshape a [dst, src] int8 weight matrix into the weight memory's layout and the one written in drain.v RTL. (weight between src neuron and dst neuron)
+
+    For a w1 example, when looping through ev_idx each value represents a firing source neuron, the accumulation goes through every hidden layer neuron. So the weight layout in transposed [src,dst] order allows them to be encoded into words for each source neuron, which goes through 32 cycles(4 weights per word, 32 words in total for 128 hidden neurons). 
+    """
+    n_dst, n_src = w.shape
+    slots = words_per_src * lanes #128/16
+    padded = np.zeros((n_src, slots), dtype=np.int64)
+    padded[:, :n_dst] = w.T # [src, dst], zero-padded for layer 2 10-15 slots
+
+    b = padded.astype(np.int64) & 0xFF # encode each signed weight as an 8-bit pattern
+    words = np.zeros((n_src, words_per_src), dtype=np.uint32)
+    for j in range(lanes):
+        words |= (b[:, j::lanes].astype(np.uint32) << (8 * j))
+    return words.reshape(-1) #flattens to w for source0, w for source1, w for source2, etc.
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", default="model/training/runs/snn_h128_k2_T20")
@@ -101,6 +118,15 @@ def main():
     emit("counts", counts,                        2, "output spike totals over T") #max T=20
     emit("pred",   pred,                          1, "golden argmax classification")
     emit("labels", labels[idx].astype(np.int32),  1, "MNIST ground truth")
+
+    lanes = 4
+    w1_words = cfg["hidden_size"] // lanes
+    w2_words = 4
+    emit("w1", pack_weights(w1, w1_words, lanes), 8,
+         f"w1 image: {w1_words} words per input, {lanes} int8 per word")
+    emit("w2", pack_weights(w2, w2_words, lanes), 8,
+         f"w2 image: {w2_words} words per hidden neuron, padded from "
+         f"{-(-cfg['output_size'] // lanes)}")
 
     manifest = {
         "run": str(run_dir),
