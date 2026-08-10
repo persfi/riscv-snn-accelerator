@@ -270,4 +270,12 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - drain is pure alu, the addr generation and delay logic should be managed by sequencer.
 
 ## 2026-08-07
-- changed export_vectors to emit weights that'll be loaded into accel (8bit and flat) → emitted the new w1 & w2 hex.
+- changed export_vectors to emit weights that'll be loaded into accel (8bit and flat) → emitted the new w1 & w2 hex. 
+
+## 2026-08-09
+- need an mmio module to input data from core to accel. Accel needs to know which bus to write to and that addr is inputted in mmio module by core_d_addr, core_wdata for the value to write to accel, and core_d_rdata for accel output
+- host_addr in accel_mmio is 8 bits as in mmio.h the accel related parameter addr were already decided with offset from 0x10-0x40+36(count queue), thats 0x64, which is representable within 7 bits (takes 8 just for convention)
+
+## 2026-08-10
+- wrote addr_gen lint and test 4/4 passed.
+- hidden state variation should be done later as a refractor after the sequencer and accel.v are succesfully wired
