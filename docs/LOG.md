@@ -279,3 +279,7 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 ## 2026-08-10
 - wrote addr_gen lint and test 4/4 passed.
 - hidden state variation should be done later as a refractor after the sequencer and accel.v are succesfully wired
+- added word_cnt_q to acc mem because acc writes one cycle later than its read (which is used for v calc), and it's way simpler to create another port than to use flags
+- added state_q so the delay in acc can be seperated from v without needed flags.
+- redo acc mem tb 14/14 passed.
+
