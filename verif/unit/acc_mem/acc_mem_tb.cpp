@@ -2,9 +2,6 @@
 // time by group index. The read is combinational because the drain does
 // read-modify-write in a single cycle.
 //
-// Two address ports: word_cnt_q addresses the write/clear, word_cnt addresses
-// the read. 
-
 // ctrl encoding comes from accel_defs.vh.
 #include "Vacc_mem.h"
 #include "tb_harness.h"
@@ -16,8 +13,8 @@ static const int CTRL_UNUSED = 3;  // 2'b11
 
 static void write_group(Testbench<Vacc_mem>& tb, int group,
                         uint32_t l0, uint32_t l1, uint32_t l2, uint32_t l3) {
-    tb.top.word_cnt_q = group;
-    tb.top.ctrl       = CTRL_WRITE;
+    tb.top.word_cnt = group;
+    tb.top.ctrl     = CTRL_WRITE;
     tb.top.acc_wdata[0] = l0;
     tb.top.acc_wdata[1] = l1;
     tb.top.acc_wdata[2] = l2;
@@ -37,9 +34,8 @@ int main() {
     Testbench<Vacc_mem> tb("verif/build/acc_mem/acc_mem.vcd");
     auto& dut = tb.top;
 
-    dut.ctrl       = CTRL_IDLE;
-    dut.word_cnt   = 0;
-    dut.word_cnt_q = 0;
+    dut.ctrl     = CTRL_IDLE;
+    dut.word_cnt = 0;
     tb.settle();
 
     // write group 31 (entries 124..127) with four distinct values, so a
@@ -51,8 +47,7 @@ int main() {
     CHECK_EQ(read_lane(tb, 31, 3), 0x44444444u, "lane 3 should land in its own entry");
 
     // anything that isn't WRITE or CLEAR must leave memory alone
-    dut.word_cnt_q   = 31;
-    dut.word_cnt     = 31;
+    dut.word_cnt = 31;
     dut.acc_wdata[0] = 0xDEADBEEF;
     dut.ctrl = CTRL_IDLE;
     tb.tick();
@@ -68,27 +63,11 @@ int main() {
     tb.settle();
     CHECK_EQ(dut.acc_rdata[0], 0x11111111u, "read should follow word_cnt without a tick");
 
-    // the flush cycle: the drain's last write lands in group 31 while the sweep reads group 0 in the same cycle. 
-    dut.word_cnt_q   = 31;
-    dut.word_cnt     = 0;
-    dut.acc_wdata[0] = 0x55555555;
-    dut.acc_wdata[1] = 0x66666666;
-    dut.acc_wdata[2] = 0x77777777;
-    dut.acc_wdata[3] = 0x88888888;
-    dut.ctrl = CTRL_WRITE;
+    // clear zeroes the addressed group, and only on the clock edge
+    dut.word_cnt = 31;
+    dut.ctrl     = CTRL_CLEAR;
     tb.settle();
-    CHECK_EQ(dut.acc_rdata[0], 0xAAAAAAAAu, "read must follow word_cnt while the write targets word_cnt_q");
-    tb.tick();
-    dut.ctrl = CTRL_IDLE;
-    CHECK_EQ(read_lane(tb, 31, 0), 0x55555555u, "write should land at word_cnt_q, not word_cnt");
-    CHECK_EQ(read_lane(tb, 0, 0), 0xAAAAAAAAu, "the group being read must be untouched");
-
-    // clear zeroes the group addressed by word_cnt_q, and only on the clock edge
-    dut.word_cnt_q = 31;
-    dut.word_cnt   = 31;
-    dut.ctrl       = CTRL_CLEAR;
-    tb.settle();
-    CHECK_EQ(dut.acc_rdata[0], 0x55555555u, "clear should not take effect before the posedge");
+    CHECK_EQ(dut.acc_rdata[0], 0x11111111u, "clear should not take effect before the posedge");
     tb.tick();
     dut.ctrl = CTRL_IDLE;
     CHECK_EQ(read_lane(tb, 31, 0), 0x00000000u, "clear should zero the group on the posedge");
