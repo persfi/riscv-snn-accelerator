@@ -10,9 +10,9 @@ static const int CTRL_CLEAR = 2;   // V_CLEAR
 static const uint64_t L1_DATA = 0x12345678aaaabcddULL;
 static const uint64_t L2_DATA = 0x1111222233334444ULL;
 
-static void write_group(Testbench<Vv_mem>& tb, int layer, int group, uint64_t data) { //group = word_cnt
+static void write_group(Testbench<Vv_mem>& tb, int layer, int group, uint64_t data) { //group = word_cnt_q
     tb.top.layer_state = layer;
-    tb.top.word_cnt    = group;
+    tb.top.word_cnt_q    = group;
     tb.top.v_wdata     = data;
     tb.top.ctrl        = CTRL_WRITE;
     tb.tick();
@@ -22,7 +22,7 @@ static void write_group(Testbench<Vv_mem>& tb, int layer, int group, uint64_t da
 // combinational: address and layer in, data out, no tick
 static uint64_t read_group(Testbench<Vv_mem>& tb, int layer, int group) {
     tb.top.layer_state = layer;
-    tb.top.word_cnt    = group;
+    tb.top.word_cnt_q    = group;
     tb.settle();
     return tb.top.v_rdata;
 }
@@ -34,11 +34,11 @@ int main() {
 
     dut.ctrl        = CTRL_IDLE;
     dut.layer_state = 0;
-    dut.word_cnt    = 0;
+    dut.word_cnt_q    = 0;
     dut.v_wdata     = 0;
     tb.settle();
 
-    // same word_cnt, different layer_state 
+    // same word_cnt_q, different layer_state 
     write_group(tb, 0, 2, L1_DATA);
     write_group(tb, 1, 2, L2_DATA);
     CHECK_EQ(read_group(tb, 0, 2), L1_DATA, "layer 1 group 2 should hold its own data");
@@ -55,7 +55,7 @@ int main() {
 
     // four distinct lane values & write timing
     dut.layer_state = 0;
-    dut.word_cnt    = 5;
+    dut.word_cnt_q    = 5;
     dut.v_wdata     = 0x1111222233334444ULL;
     dut.ctrl        = CTRL_WRITE;
     tb.settle();
@@ -70,10 +70,10 @@ int main() {
     CHECK_EQ(v[24], 0x0000, "write must not passed the assigned group");
 
     // combinational read
-    dut.word_cnt = 2;
+    dut.word_cnt_q = 2;
     tb.settle();
     CHECK_EQ(dut.v_rdata, 0ULL, "read should update without a tick");
-    dut.word_cnt = 5;
+    dut.word_cnt_q = 5;
     tb.settle();
     CHECK_EQ(dut.v_rdata, 0x1111222233334444ULL, "and back again, still no tick");
 

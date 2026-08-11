@@ -282,4 +282,12 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - added word_cnt_q to acc mem because acc writes one cycle later than its read (which is used for v calc), and it's way simpler to create another port than to use flags
 - added state_q so the delay in acc can be seperated from v without needed flags.
 - redo acc mem tb 14/14 passed.
+- sequenser layer 1 fsm complete: drain/sweep loop, rd bank = t[0]. sequencer tb tomorrow to check the timing bugs of today.
+
+## 2026-08-11
+- found a critical bug after tb: adding a delayed word cnt for acc mem doesnt work. bc after reset, cyc0 holds weight addr, cyc 1 reads the weights (bc bram needs cyc to read) and acc adds combinationally, then write at cyc 2 (write lands, write on edge). but acc read uses wordcnt which is now [4-7], and by cyc two write, its writing to [4-7] not the correct [0-3]. 
+- out of several options i can think of: 1. add a new state 2. delay v and acc 2 write 2 cycs 3. add a prime cyc that reads the first weight before cyc0 → speeding weight read 1 cyc. The third is the cleanest bc nothing else needs to change only need to add prime before every timestep or right after rst. 
+- since counter starts from 0 from prime, the acc read and write are now both delayed on cyc. Only need to pass word_cnt_q to acc mem now.
+- added ev_idx_q bc ev_idx is passed to addr gen to read the weight, which is also one cyc earlier, by the time its 31, the weights only arrives a cyc later. acc and v ctrl are combinational if state changes the next cyc, they will clear/idle, so that the last [31] acc/v wouldnt be written → state change depends on ev_idx_q
+- sequencer layer one lint and test 30/30 passed.
 

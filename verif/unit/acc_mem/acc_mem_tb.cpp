@@ -13,7 +13,7 @@ static const int CTRL_UNUSED = 3;  // 2'b11
 
 static void write_group(Testbench<Vacc_mem>& tb, int group,
                         uint32_t l0, uint32_t l1, uint32_t l2, uint32_t l3) {
-    tb.top.word_cnt = group;
+    tb.top.word_cnt_q = group;
     tb.top.ctrl     = CTRL_WRITE;
     tb.top.acc_wdata[0] = l0;
     tb.top.acc_wdata[1] = l1;
@@ -25,7 +25,7 @@ static void write_group(Testbench<Vacc_mem>& tb, int group,
 
 // combinational read: address in, data out, no tick
 static uint32_t read_lane(Testbench<Vacc_mem>& tb, int group, int lane) {
-    tb.top.word_cnt = group;
+    tb.top.word_cnt_q = group;
     tb.settle();
     return tb.top.acc_rdata[lane];
 }
@@ -35,7 +35,7 @@ int main() {
     auto& dut = tb.top;
 
     dut.ctrl     = CTRL_IDLE;
-    dut.word_cnt = 0;
+    dut.word_cnt_q = 0;
     tb.settle();
 
     // write group 31 (entries 124..127) with four distinct values, so a
@@ -47,24 +47,24 @@ int main() {
     CHECK_EQ(read_lane(tb, 31, 3), 0x44444444u, "lane 3 should land in its own entry");
 
     // anything that isn't WRITE or CLEAR must leave memory alone
-    dut.word_cnt = 31;
+    dut.word_cnt_q = 31;
     dut.acc_wdata[0] = 0xDEADBEEF;
     dut.ctrl = CTRL_IDLE;
     tb.tick();
     CHECK_EQ(read_lane(tb, 31, 0), 0x11111111u, "ctrl=idle must not write");
 
-    // a second group holds different data, and the read follows word_cnt with no clock edge in between
+    // a second group holds different data, and the read follows word_cnt_q with no clock edge in between
     write_group(tb, 0, 0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD);
 
-    dut.word_cnt = 0;
+    dut.word_cnt_q = 0;
     tb.settle();
     CHECK_EQ(dut.acc_rdata[0], 0xAAAAAAAAu, "group 0 should read its own data");
-    dut.word_cnt = 31;
+    dut.word_cnt_q = 31;
     tb.settle();
-    CHECK_EQ(dut.acc_rdata[0], 0x11111111u, "read should follow word_cnt without a tick");
+    CHECK_EQ(dut.acc_rdata[0], 0x11111111u, "read should follow word_cnt_q without a tick");
 
     // clear zeroes the addressed group, and only on the clock edge
-    dut.word_cnt = 31;
+    dut.word_cnt_q = 31;
     dut.ctrl     = CTRL_CLEAR;
     tb.settle();
     CHECK_EQ(dut.acc_rdata[0], 0x11111111u, "clear should not take effect before the posedge");
