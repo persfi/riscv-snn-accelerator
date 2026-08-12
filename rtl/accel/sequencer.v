@@ -60,17 +60,17 @@ module sequencer (
             0: begin 
                 v_ctrl = V_IDLE;  
                 acc_ctrl = ACC_WRITE;
-                layer_state = state[0];
+                layer_state = 0;
                 end
             1: begin 
                  v_ctrl = V_WRITE;
                  acc_ctrl = ACC_CLEAR;
-                 layer_state = state[0];
+                 layer_state = 0;
                  end
             2: begin
                 v_ctrl = V_IDLE; 
                 acc_ctrl = ACC_WRITE;
-                layer_state = state[0];
+                layer_state = 1;
                 end
             default: begin 
                 v_ctrl = V_IDLE ; 

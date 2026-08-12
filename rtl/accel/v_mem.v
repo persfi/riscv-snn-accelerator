@@ -10,6 +10,7 @@ module v_mem (
     output reg [V_WIDTH-1:0] v_rdata
 );
 
+
     /* verilator lint_off UNUSEDPARAM */
     `include "accel_defs.vh"
     /* verilator lint_on UNUSEDPARAM */
@@ -18,6 +19,7 @@ module v_mem (
     wire [31:0] base = layer_state ? 32'd128 : 32'd0;
     integer i;
 
+    /* verilator lint_off UNUSEDLOOP  */
     always @(posedge clk) begin
         if(ctrl == V_CLEAR) begin
             for (i = 0; i < 140; i = i + 1) begin
@@ -30,6 +32,7 @@ module v_mem (
             end
         end
     end
+    /* verilator lint_on UNUSEDLOOP  */
 
     integer j;
     always @(*) begin

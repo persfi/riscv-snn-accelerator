@@ -289,5 +289,9 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 - out of several options i can think of: 1. add a new state 2. delay v and acc 2 write 2 cycs 3. add a prime cyc that reads the first weight before cyc0 → speeding weight read 1 cyc. The third is the cleanest bc nothing else needs to change only need to add prime before every timestep or right after rst. 
 - since counter starts from 0 from prime, the acc read and write are now both delayed on cyc. Only need to pass word_cnt_q to acc mem now.
 - added ev_idx_q bc ev_idx is passed to addr gen to read the weight, which is also one cyc earlier, by the time its 31, the weights only arrives a cyc later. acc and v ctrl are combinational if state changes the next cyc, they will clear/idle, so that the last [31] acc/v wouldnt be written → state change depends on ev_idx_q
-- sequencer layer one lint and test 30/30 passed.
-
+- sequencer.v layer one lint and test 30/30 passed.      
+-  wired up accel.v to test layer one's sequence against golden model
+- first run failed → layer state used state[0] which turns to 1 when state==1 (sweep of layer one), so that v mem took layer 2's arrays to write to (layer_state 1 = layer 2). layer 1's vmem was untouched → return 0. 256 tests only passed 128 (acc checks are correct). 
+Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
+- In accel.v , as accel_mmio.v isnt wired yet, pass the params from accel's input ports so tb can drive them directly.
+- added linf off ununsedloop in vmem bc the clear loop hasnt been driven yet. will be driven after the clear state is added in sequencer.
