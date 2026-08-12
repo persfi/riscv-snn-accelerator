@@ -1,5 +1,6 @@
 //`ifndef DEFS_VH
 //`define DEFS_VH
+// no ifndef guard or else only the include in the first module file in core.v would be recognized
 
 localparam [3:0] ALU_ADD  = 4'b0000;
 localparam [3:0] ALU_SUB  = 4'b1000;
