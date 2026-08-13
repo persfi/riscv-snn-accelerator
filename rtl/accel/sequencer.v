@@ -4,7 +4,7 @@ module sequencer (
     
     //input start,
     input [4:0] t_max, //20
-    input [9:0] ev_len,
+    input [9:0] eva_len, evb_len,
 
     output reg [1:0] v_ctrl,
     output reg [1:0] acc_ctrl,
@@ -26,6 +26,7 @@ module sequencer (
     reg [1:0] state;
     
     wire [4:0] t;
+    wire [9:0] ev_len;
     
     //time_step counter
     counter #(.W(5)) c_t (
@@ -35,8 +36,6 @@ module sequencer (
         .cnt_limit(t_max-1),
         .q(t)
     );
-
-    assign rd_bank = t[0];
 
     counter #(.W(10)) c_ev (
         .rst(rst),
@@ -107,7 +106,9 @@ module sequencer (
     end
 
     assign ev_stall = (word_cnt != 31) || (state != 0);
-    assign t_stall = !(state == 1 && word_cnt_q == 31)  ;
+    assign t_stall = !(state == 1 && word_cnt == 31)  ;
     assign image_done = t==t_max && word_cnt_q == 31 && state == 3;
+    assign rd_bank = t[0];
+    assign ev_len = rd_bank ? evb_len : eva_len;
 
 endmodule

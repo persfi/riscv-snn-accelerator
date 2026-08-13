@@ -300,3 +300,5 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - added clear v and clear acc in prime state so that after the start of every image, the v and acc gets cleaned properly.
 - acc clear is per group during sweeps so added another acc clear all to clear the whole mem in one cyc.
 - changed old tests in sequencer tb and removed the manual zeroing in accel tb → 30/30 test passed & 256/256 test passed. 
+- wired ev bank selection, found a bug : while switching timesteps (and ev banks), the timestep switch is based on t_stall, but t_stall is controlled with word_cnt_q. so in the last cyc, the weight read the previous bank (addr gen of weight uses ev_idx)'s idx's weights → changed the t_stall read to word_cnt
+- re-test sequencer and accel for bank switches → 31/31 tests passed & 512/512 test passed 

@@ -8,6 +8,7 @@ module accel (
     input [4:0]  t_max,
     input [2:0] k,
     input [9:0]  eva_len,
+    input [9:0]  evb_len,
     input [15:0] v_th
     //output [31:0] host_rdata
 );
@@ -121,7 +122,8 @@ module accel (
         .rst(rst),
         .clk(clk),
         .t_max(t_max),
-        .ev_len(eva_len),
+        .eva_len(eva_len),
+        .evb_len(evb_len),
         .v_ctrl(v_ctrl),
         .acc_ctrl(acc_ctrl),
         .layer_state(layer_state),

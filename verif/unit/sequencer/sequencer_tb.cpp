@@ -19,7 +19,8 @@ int main() {
     auto& dut = tb.top;
 
     dut.t_max  = 20;
-    dut.ev_len = 2;
+    dut.eva_len = 2;
+    dut.evb_len = 2;
 
     dut.rst = 1;
     tb.tick();
@@ -65,7 +66,8 @@ int main() {
 
     // Cycle 96 is the last group and it primes the next drain, so no separate prime cycle is needed per timestep.
     for (int c = 66; c <= 96; c++) tb.tick();
-
+    
+    CHECK_EQ(dut.rd_bank, 1, "prime cycle: t must have advanced before the next drain's address goes out");
     // cycle 97:  back to the drain , timestep++
     tb.tick();
     CHECK_EQ(dut.acc_ctrl,   ACC_WRITE, "loop back: draining again");
