@@ -8,9 +8,11 @@
 static const int ACC_IDLE  = 0;
 static const int ACC_WRITE = 1;
 static const int ACC_CLEAR = 2;
+static const int ACC_CLEAR_ALL = 3;
 
 static const int V_IDLE  = 0;
 static const int V_WRITE = 1;
+static const int V_CLEAR_ALL = 2;
 
 int main() {
     Testbench<Vsequencer> tb("verif/build/sequencer/sequencer.vcd");
@@ -25,9 +27,9 @@ int main() {
     tb.settle();
 
     // cycle 0: prime. 
-    CHECK_EQ(dut.acc_ctrl,    ACC_IDLE, "prime: no weight has arrived yet so acc is idle");
+    CHECK_EQ(dut.acc_ctrl,    ACC_CLEAR_ALL, "prime: no weight has arrived yet so acc should be cleared");
     CHECK_EQ(dut.word_cnt,    0,        "prime: issues group 0's address");
-    CHECK_EQ(dut.v_ctrl,      V_IDLE,   "prime: drain v untouched");
+    CHECK_EQ(dut.v_ctrl,      V_CLEAR_ALL,   "prime: drain v untouched, v should be cleared");
     CHECK_EQ(dut.layer_state, 0,        "prime: should address layer 1");
 
     // drain: word_cnt_q names the group whose weights have just arrived

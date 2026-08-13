@@ -28,6 +28,11 @@ module acc_mem #(
                 mem[word_cnt_q*LANES+i] <= 0;
             end
         end
+        else if(ctrl == ACC_CLEAR_ALL) begin
+            for (i = 0; i < DEPTH; i = i + 1) begin
+                mem[i] <= 0;
+            end
+        end
         
     end 
 

@@ -19,9 +19,8 @@ module v_mem (
     wire [31:0] base = layer_state ? 32'd128 : 32'd0;
     integer i;
 
-    /* verilator lint_off UNUSEDLOOP  */
     always @(posedge clk) begin
-        if(ctrl == V_CLEAR) begin
+        if(ctrl == V_CLEAR_ALL) begin
             for (i = 0; i < 140; i = i + 1) begin
                 v[i] <= 0; 
             end
@@ -32,8 +31,7 @@ module v_mem (
             end
         end
     end
-    /* verilator lint_on UNUSEDLOOP  */
-
+    
     integer j;
     always @(*) begin
             for (j = 0; j < LANES; j = j + 1) begin

@@ -295,3 +295,8 @@ over pending[3:0], stall_en holds word_cnt counters to prevent it from overwriti
 Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - In accel.v , as accel_mmio.v isnt wired yet, pass the params from accel's input ports so tb can drive them directly.
 - added linf off ununsedloop in vmem bc the clear loop hasnt been driven yet. will be driven after the clear state is added in sequencer.
+
+## 2026-08-13
+- added clear v and clear acc in prime state so that after the start of every image, the v and acc gets cleaned properly.
+- acc clear is per group during sweeps so added another acc clear all to clear the whole mem in one cyc.
+- changed old tests in sequencer tb and removed the manual zeroing in accel tb → 30/30 test passed & 256/256 test passed. 

@@ -72,6 +72,11 @@ module sequencer (
                 acc_ctrl = ACC_WRITE;
                 layer_state = 1;
                 end
+            3: begin
+                v_ctrl = V_CLEAR_ALL; 
+                acc_ctrl = ACC_CLEAR_ALL;
+                layer_state = 0;
+                end
             default: begin 
                 v_ctrl = V_IDLE ; 
                 acc_ctrl = ACC_IDLE;

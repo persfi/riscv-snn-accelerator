@@ -90,10 +90,6 @@ int main() {
     for (int n = 0; n < n_ev; n++)
         bus_write(tb, EVA_BASE + 4u * (uint32_t)n, ev_idx[ev_off + n]);
 
-    // replacing the CLEAR state that doesnt exist yet
-    for (int i = 0; i < HIDDEN; i++) dut.rootp->accel__DOT__acc_mem__DOT__mem[i] = 0;
-    for (int i = 0; i < 140; i++)    dut.rootp->accel__DOT__v_mem__DOT__v[i] = 0;
-
     dut.rst = 0;
     tb.settle();
 
