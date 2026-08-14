@@ -150,7 +150,7 @@ module sequencer (
             else if(sweep0_start) begin //drain0 -> sweep0
                 state <= SWEEP0;
             end
-            else if(state == SWEEP0 && word_cnt_q == word_limit) begin //sweep0 -> prime1
+            else if(state == SWEEP0 && word_cnt_q == word_limit &&pending==0) begin //sweep0 -> prime1
                 state <= PRIME1;  
             end
             else if(state == PRIME1 && pending==0 && spk1_wr_ptr!=0) begin//prime1 -> drain1

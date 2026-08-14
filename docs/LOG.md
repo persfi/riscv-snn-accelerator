@@ -303,7 +303,7 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - wired ev bank selection, found a bug : while switching timesteps (and ev banks), the timestep switch is based on t_stall, but t_stall is controlled with word_cnt_q. so in the last cyc, the weight read the previous bank (addr gen of weight uses ev_idx)'s idx's weights → changed the t_stall read to word_cnt
 - re-test sequencer and accel for bank switches → 31/31 tests passed & 512/512 test passed
 - 3 hrs trying to write the pending logic without a table  → failed. ALWAYS have a TABLE first for sequencial planning!
-- old states dont work → the sweep introduces pending queue logic and it without another state it cannot hold the correct word_cnt from sweep -> drain. such that drain cannot read the correct weight[0] in the first cycle. → seperated clear and prime into clear prime0 and prime1. clear per image start, prime between clear and drain0 and between sweep0 and drain1.
+- old states dont work → the sweep introduces pending queue logic and without another state it cannot hold the correct word_cnt from sweep -> drain. such that drain cannot read the correct weight[0] in the first cycle. → seperated clear and prime into clear prime0 and prime1. clear per image start, prime between clear and drain0 and between sweep0 and drain1.
 - the prime now means to clear word counter to hold it at 0 and both v/acc should be idle. This allows the weight[0] pre-read and processing remaining pending spikes after sweep exited.
 - spk1_wr_ptr need a mux with ev_idx[6:0] to generate the correct addr for spk1 because spk1_wr_ptr is also used to identify ev_len for layer 2, and ev_idx is for addrgen of layers 2 weights during drain1.
 - tested the spike input of sequencer to addr and spk wr data output through sequencer tb against first image(20/20 timesteps) of golden model. 1113/1113 tests passed.
@@ -317,4 +317,5 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - linked count and accel_mmio to accel.v. replaced the tb poking config in accel tb cpp and changed it to the accel_mmio path → check that it works and the hostwe and mmio select is correct
 - caught a sweep1 bug: if only the last group spikes, wr ptr would be 0 when its entering the prime1. so then it will automatically trigger sweep1 start from the original wiring in sequencer, skipping drain1.  → added pending ==0 which is also the exit condition of prime1. only when prime1 is exiting does it prove wrptr=0 actually means there are no spikes.
 - imgdone bug : wrote t==t_max but it should be t==t_mx-1.
-
+- sweep0 exit bug during accel 20 timesteps test: original exit condition is if state = sweep0 and wordcntq=limit, but if theres a pending spike on group30, wordcntq still advances to 31 before stalling, so the conditions would be met and state advaces to prime1, locking v and acc so that the lif of word_cnt_q=31 never writes back → added && pending==0 condition that make sure wordcntq =31 is considered before beiing skipped.
+- created accel tb over all 20timesteps of an image against golden model. lint and test 6091/6091 passed/
