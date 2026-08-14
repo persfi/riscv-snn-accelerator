@@ -9,7 +9,8 @@ module accel (
     input [2:0] k,
     input [9:0]  eva_len,
     input [9:0]  evb_len,
-    input [15:0] v_th
+    input [15:0] v_th,
+    output image_done
     //output [31:0] host_rdata
 );
 /* verilator lint_on UNUSEDSIGNAL */
@@ -26,7 +27,7 @@ module accel (
 
     //for tb
     wire eva_sel= (host_addr[31:12]==20'h20001); 
-    wire evb_sel= (host_addr[31:12]== 0'h20002);
+    wire evb_sel= (host_addr[31:12]== 20'h20002);
     wire ev_we, ev_wr_bank;
     wire [9:0] ev_wr_addr, ev_wr_data;
     assign ev_we = host_we && (eva_sel || evb_sel);
@@ -42,6 +43,12 @@ module accel (
     wire [V_WIDTH-1:0] v_res;
     wire [9:0] ev_idx;
     //wire [9:0] ev_idx_q;
+    wire [3:0] spike;
+
+    wire spk1_we;
+    wire [6:0] spk1_addr;
+    wire [6:0] spk1_wr_data;
+    wire [6:0] spk1_rd_data;
     
     wire w1_we;
     wire w2_we;
@@ -94,8 +101,16 @@ module accel (
         .layer_state(layer_state),
         .word_cnt(word_cnt),
         .ev_rd_data(ev_rd_data),
-        .spk1_rd_data(7'b0),
+        .spk1_rd_data(spk1_rd_data),
         .weight_addr(gen_weight_addr)
+    );
+
+    spk1 spk1 (
+        .clk(clk),
+        .we(spk1_we),
+        .addr(spk1_addr),
+        .wr_data(spk1_wr_data),
+        .rd_data(spk1_rd_data)
     );
 
 
@@ -115,7 +130,7 @@ module accel (
         .v(v),
         .acc(acc_rdata),
         .v_res(v_res),
-        .spike()
+        .spike(spike)
     );
 
     sequencer sequencer (
@@ -124,6 +139,10 @@ module accel (
         .t_max(t_max),
         .eva_len(eva_len),
         .evb_len(evb_len),
+        .spike(spike),
+        .spk1_we(spk1_we),
+        .spk1_addr(spk1_addr),
+        .spk1_wr_data(spk1_wr_data),
         .v_ctrl(v_ctrl),
         .acc_ctrl(acc_ctrl),
         .layer_state(layer_state),
@@ -132,7 +151,7 @@ module accel (
         .ev_idx(ev_idx),
         .ev_idx_q(),
         .rd_bank(rd_bank),
-        .image_done()
+        .image_done(image_done)
     );
 
     /* verilator lint_on PINCONNECTEMPTY  */

@@ -5,7 +5,11 @@ module sequencer (
     //input start,
     input [4:0] t_max, //20
     input [9:0] eva_len, evb_len,
+    input [3:0] spike,
 
+    output spk1_we,
+    output [6:0] spk1_addr,
+    output [6:0] spk1_wr_data,
     output reg [1:0] v_ctrl,
     output reg [1:0] acc_ctrl,
     output layer_state,
@@ -23,15 +27,28 @@ module sequencer (
 
     wire t_stall;
     wire ev_stall;
-    reg [1:0] state;
+    
+    // sequencer states, in execution order
+    localparam [2:0] CLEAR  = 3'd0;  //start of image
+    localparam [2:0] PRIME0 = 3'd1;  
+    localparam [2:0] DRAIN0 = 3'd2;
+    localparam [2:0] SWEEP0 = 3'd3;
+    localparam [2:0] PRIME1 = 3'd4;
+    localparam [2:0] DRAIN1 = 3'd5;
+    localparam [2:0] SWEEP1 = 3'd6;
+
+    reg [2:0] state;
     
     wire [4:0] t;
     wire [9:0] ev_len;
+
+    wire [4:0] word_limit = layer_state ? 5'd2 : 5'd31;
     
     //time_step counter
     counter #(.W(5)) c_t (
         .rst(rst),
         .clk(clk),
+        .clr(0),
         .stall(t_stall),
         .cnt_limit(t_max-1),
         .q(t)
@@ -40,6 +57,7 @@ module sequencer (
     counter #(.W(10)) c_ev (
         .rst(rst),
         .clk(clk),
+        .clr(clr),
         .stall(ev_stall),
         .cnt_limit(ev_len-1),
         .q(ev_idx)
@@ -48,33 +66,49 @@ module sequencer (
     counter #(.W(5)) c_word (
         .rst(rst),
         .clk(clk),
-        .stall(0), //no stall drain
-        .cnt_limit(31),
+        .clr(clr),
+        .stall(word_cnt_stall),
+        .cnt_limit(word_limit),
         .q(word_cnt)
     );
 
 
     always @(*) begin  
         case (state)
-            0: begin 
-                v_ctrl = V_IDLE;  
+            CLEAR: begin //start of img
+                v_ctrl = V_CLEAR_ALL;
+                acc_ctrl = ACC_CLEAR_ALL;
+                layer_state = 0;
+                end
+            PRIME0: begin
+                v_ctrl = V_IDLE;
+                acc_ctrl = ACC_IDLE;
+                layer_state = 0;
+                end
+            DRAIN0: begin
+                v_ctrl = V_IDLE;
                 acc_ctrl = ACC_WRITE;
                 layer_state = 0;
                 end
-            1: begin 
-                 v_ctrl = V_WRITE;
-                 acc_ctrl = ACC_CLEAR;
+            SWEEP0: begin
+                 v_ctrl = (pending !=0 )? V_IDLE:V_WRITE;
+                 acc_ctrl = (pending !=0 )? ACC_IDLE:ACC_CLEAR;
                  layer_state = 0;
                  end
-            2: begin
-                v_ctrl = V_IDLE; 
+            PRIME1: begin
+                v_ctrl = V_IDLE;
+                acc_ctrl = ACC_IDLE;
+                layer_state = 1;
+                end
+            DRAIN1: begin
+                v_ctrl = V_IDLE;
                 acc_ctrl = ACC_WRITE;
                 layer_state = 1;
                 end
-            3: begin
-                v_ctrl = V_CLEAR_ALL; 
-                acc_ctrl = ACC_CLEAR_ALL;
-                layer_state = 0;
+            SWEEP1: begin
+                 v_ctrl =V_WRITE;
+                 acc_ctrl = ACC_CLEAR;
+                 layer_state = 1;
                 end
             default: begin 
                 v_ctrl = V_IDLE ; 
@@ -84,31 +118,84 @@ module sequencer (
         endcase
     end
 
+    wire clr =(state == CLEAR) || ((state == SWEEP0 || state == SWEEP1) && word_cnt_q == word_limit);
+    wire drain_done = (state==DRAIN0 || state==DRAIN1) && ev_idx_q == ev_len-1 && word_cnt_q == word_limit;
+    wire sweep0_start = drain_done && state==DRAIN0;
+    wire sweep1_start = (drain_done && state==DRAIN1) || (state==PRIME1 &&spk1_wr_ptr==0);
+     
     always @(posedge clk) begin
         if (rst) begin
-            state <= 2'b11;
+            state <= CLEAR;
             ev_idx_q <= 0;
             word_cnt_q <= 0;
-         
         end
         else begin
-            word_cnt_q <= word_cnt;
             ev_idx_q <= ev_idx;
+            if(word_cnt_stall==0) begin
+                word_cnt_q <= word_cnt; //cnt_q updates only when word_cnt does
+            end
 
-            if      (state == 0 && ev_idx_q == ev_len-1 && word_cnt_q == 31) state <= 1;
-            else if (state == 1 && word_cnt_q == 31)                       state <= 0;
-            else if(state == 2'b11)
-            state <=0;
-            
+            //state change conditions
+            if(state == CLEAR) begin//clear-> prime0
+                state <= PRIME0;
+                ev_idx_q <= 0;
+                word_cnt_q <= 0;
+            end
+            else if(state == PRIME0) begin //prime0 -> drain0
+                state <= DRAIN0;
+            end
+            else if(sweep0_start) begin //drain0 -> sweep0
+                state <= SWEEP0;
+            end
+            else if(state == SWEEP0 && word_cnt_q == word_limit) begin
+                state <= PRIME1;  
+            end
+            else if(state == PRIME1 && pending==0 && spk1_wr_ptr!=0) begin
+                state <= DRAIN1; 
+            end
+            else if(sweep1_start) begin
+                state <= SWEEP1; 
+            end
+            else if(state == SWEEP1 && word_cnt_q == word_limit) begin
+                state <= PRIME0;
+            end
+
         end
-
-
     end
 
-    assign ev_stall = (word_cnt != 31) || (state != 0);
-    assign t_stall = !(state == 1 && word_cnt == 31)  ;
-    assign image_done = t==t_max && word_cnt_q == 31 && state == 3;
+    //spk1 push block
+    reg [4:0] group;
+    always @(posedge clk) begin
+        if(rst||sweep0_start)begin
+            pending   <= 0;
+            spk1_wr_ptr <= 0;
+        end
+        else if(spike!=0 && pending ==0 && state==SWEEP0) begin
+            pending <= spike;
+            group <= word_cnt_q;
+        end
+        else if(pending !=0) begin //dont add state guard so that it drains in prime
+            pending <= pending & ~(4'b1<<lane);
+            spk1_wr_ptr <= spk1_wr_ptr+1;
+        end
+    end
+
+    reg [3:0] pending;
+    reg [6:0] spk1_wr_ptr;
+    wire word_cnt_stall;
+    wire [1:0] lane;
+    assign word_cnt_stall = pending != 4'b0;
+    assign lane = pending[0] ? 2'd0 :
+              pending[1] ? 2'd1 :
+              pending[2] ? 2'd2 : 2'd3;
+    assign spk1_we = pending != 4'b0;
+    assign spk1_wr_data = {group,lane}; 
+    assign spk1_addr = spk1_we? spk1_wr_ptr : ev_idx[6:0];
+    
+    assign ev_stall = (word_cnt != word_limit) || ((state != DRAIN0)&&(state != DRAIN1));
+    assign t_stall = !(state == SWEEP1 && word_cnt_q == word_limit)  ;
+    assign image_done = t==t_max && word_cnt_q == word_limit && state == SWEEP1;
     assign rd_bank = t[0];
-    assign ev_len = rd_bank ? evb_len : eva_len;
+    assign ev_len =( layer_state==0 )?( rd_bank ? evb_len : eva_len) : {3'b0, spk1_wr_ptr};
 
 endmodule
