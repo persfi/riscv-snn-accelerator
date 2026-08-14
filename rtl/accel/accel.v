@@ -9,7 +9,8 @@ module accel (
     input [2:0] k,
     input [9:0]  eva_len,
     input [9:0]  evb_len,
-    input [15:0] v_th,
+    input [15:0] vth1,
+    input [15:0] vth2,
     output image_done
     //output [31:0] host_rdata
 );
@@ -35,6 +36,7 @@ module accel (
     assign ev_wr_addr=host_addr[11:2]; // divide by four for mem index
     assign ev_wr_data= host_wdata[9:0]; 
 
+    wire [15:0] v_th;
     wire [1:0] acc_ctrl;
     wire [1:0] v_ctrl;
     wire [ACC_WIDTH-1:0] acc_wdata;
@@ -44,12 +46,14 @@ module accel (
     wire [9:0] ev_idx;
     //wire [9:0] ev_idx_q;
     wire [3:0] spike;
+    assign v_th = layer_state? vth2:vth1;
 
     wire spk1_we;
     wire [6:0] spk1_addr;
     wire [6:0] spk1_wr_data;
     wire [6:0] spk1_rd_data;
     
+
     wire w1_we;
     wire w2_we;
     wire w1_sel = (host_addr[31:16] ==  16'h2002 || host_addr[31:16] ==  16'h2003);

@@ -1,8 +1,5 @@
-// Check layer 1 against the golden model, two timesteps. Weights and events go in
-// through the host bus, the same path the C driver will use.
-//
-// cycle 0 is the prime; then each timestep is 32*ev_len drain cycles followed
-// by 32 sweep cycles. Bank A holds even timesteps, bank B odd.
+// Full-path check of one timestep: reset -> DRAIN0 -> SWEEP0 -> PRIME1 ->
+// DRAIN1 -> SWEEP1, against the golden model.
 
 #include "Vaccel.h"
 #include "Vaccel___024root.h"
@@ -17,17 +14,20 @@ static const char* VEC = "verif/vectors/snn_h128_k2_T20/";
 
 static const int IMAGE  = 0;
 static const int TSTEP  = 0;
-static const int STEPS  = 2;
 static const int T      = 20;
 static const int HIDDEN = 128;
-static const int WORDS  = HIDDEN / 4;
+static const int OUTS   = 10;
 
 static const uint32_t W1_BASE  = 0x20020000u;
+static const uint32_t W2_BASE  = 0x20040000u;
 static const uint32_t EVA_BASE = 0x20001000u;
-static const uint32_t EVB_BASE = 0x20002000u;
 
-static const int V_TH = 248;
-static const int K    = 2;
+static const int V_TH1 = 248;
+static const int V_TH2 = 295;
+static const int K     = 2;
+
+// sequencer state encoding
+enum { CLEAR = 0, PRIME0 = 1, DRAIN0 = 2, SWEEP0 = 3, PRIME1 = 4, DRAIN1 = 5, SWEEP1 = 6 };
 
 static std::vector<uint32_t> read_hex(const std::string& path) {
     std::ifstream in(path);
@@ -46,7 +46,7 @@ static std::vector<uint32_t> read_hex(const std::string& path) {
     }
     return out;
 }
-
+//write weight and event bank a
 static void bus_write(Testbench<Vaccel>& tb, uint32_t addr, uint32_t data) {
     tb.top.host_addr  = addr;
     tb.top.host_wdata = data;
@@ -55,41 +55,44 @@ static void bus_write(Testbench<Vaccel>& tb, uint32_t addr, uint32_t data) {
     tb.top.host_we    = 0;
 }
 
-static void cmp_acc(Testbench<Vaccel>& tb, const std::vector<uint32_t>& gold, int off, int t) {
-    int bad = 0;
-    for (int i = 0; i < HIDDEN; i++) {
-        int32_t got  = (int32_t)tb.top.rootp->accel__DOT__acc_mem__DOT__mem[i];
-        int32_t want = (int32_t)gold[off + i];
-        if (got != want && bad++ < 4)
-            std::fprintf(stderr, "  t%d acc1[%3d]: got %d, want %d\n", t, i, got, want);
-        CHECK_EQ(got, want, "fc1 accumulator must match the golden model");
-    }
+static int state_of(Testbench<Vaccel>& tb) {
+    return (int)tb.top.rootp->accel__DOT__sequencer__DOT__state;
 }
 
-static void cmp_v(Testbench<Vaccel>& tb, const std::vector<uint32_t>& gold, int off, int t) {
-    int bad = 0;
-    for (int i = 0; i < HIDDEN; i++) {
-        int16_t got  = (int16_t)tb.top.rootp->accel__DOT__v_mem__DOT__v[i];
-        int16_t want = (int16_t)gold[off + i];
-        if (got != want && bad++ < 4)
-            std::fprintf(stderr, "  t%d v1[%3d]: got %d, want %d\n", t, i, got, want);
-        CHECK_EQ(got, want, "fc1 membrane must match the golden model");
+static bool run_until(Testbench<Vaccel>& tb, int want, const char* name) {
+    for (int i = 0; i < 40000; i++) {
+        tb.tick();
+        if (state_of(tb) == want) { //check if its within the desired state
+            TRACE_LINE("reached %s at cycle %llu", name, (unsigned long long)tb.cycle());
+            return true;
+        }
     }
+    std::fprintf(stderr, "TIMEOUT waiting for %s (stuck in state %d)\n", name, state_of(tb));
+    return false;
 }
 
 int main() {
     auto w1     = read_hex(std::string(VEC) + "w1.hex");
+    auto w2     = read_hex(std::string(VEC) + "w2.hex");
     auto ev_idx = read_hex(std::string(VEC) + "ev_idx.hex");
     auto ev_len = read_hex(std::string(VEC) + "ev_len.hex");
     auto acc1   = read_hex(std::string(VEC) + "acc1.hex");
     auto v1     = read_hex(std::string(VEC) + "v1.hex");
+    auto spk1g  = read_hex(std::string(VEC) + "spk1.hex");
+    auto acc2   = read_hex(std::string(VEC) + "acc2.hex");
+    auto v2     = read_hex(std::string(VEC) + "v2.hex");
 
-    const int step0 = IMAGE * T + TSTEP;
+    const int step = IMAGE * T + TSTEP;
+    const int off1 = step * HIDDEN;
+    const int off2 = step * OUTS;
 
-    size_t ev_off[STEPS]; //where every image's idx starts in ev_idx hex
-    ev_off[0] = 0;
-    for (int i = 0; i < step0; i++) ev_off[0] += ev_len[i]; //ev_len from each timestep
-    for (int s = 1; s < STEPS; s++) ev_off[s] = ev_off[s - 1] + ev_len[step0 + s - 1];
+    size_t ev_off = 0;
+    for (int i = 0; i < step; i++) ev_off += ev_len[i];
+
+    // golden queue: firing hidden neurons, ascending
+    std::vector<int> gold_q;
+    for (int n = 0; n < HIDDEN; n++)
+        if (spk1g[off1 + n]) gold_q.push_back(n);
 
     Testbench<Vaccel> tb("verif/build/accel/accel.vcd");
     auto& dut = tb.top;
@@ -97,40 +100,54 @@ int main() {
     dut.rst       = 1;
     dut.host_we   = 0;
     dut.host_addr = 0;
-    dut.t_max     = STEPS;
-    dut.eva_len   = (uint16_t)ev_len[step0];
-    dut.evb_len   = (uint16_t)ev_len[step0 + 1];
-    dut.v_th      = V_TH;
+    dut.t_max     = T;
+    dut.eva_len   = (uint16_t)ev_len[step];
+    dut.evb_len   = (uint16_t)ev_len[step];
+    dut.vth1      = V_TH1;
+    dut.vth2 = V_TH2;
     dut.k         = K;
     tb.settle();
 
-    for (size_t i = 0; i < w1.size(); i++)
-        bus_write(tb, W1_BASE + 4u * (uint32_t)i, w1[i]);
-
-    for (int s = 0; s < STEPS; s++) {
-        uint32_t base = (s & 1) ? EVB_BASE : EVA_BASE;
-        for (uint32_t n = 0; n < ev_len[step0 + s]; n++)
-            bus_write(tb, base + 4u * n, ev_idx[ev_off[s] + n]); //writes to the correct images array idx
-    }
+    for (size_t i = 0; i < w1.size(); i++) bus_write(tb, W1_BASE + 4u * (uint32_t)i, w1[i]);
+    for (size_t i = 0; i < w2.size(); i++) bus_write(tb, W2_BASE + 4u * (uint32_t)i, w2[i]);
+    for (uint32_t n = 0; n < ev_len[step]; n++)
+        bus_write(tb, EVA_BASE + 4u * n, ev_idx[ev_off + n]);
 
     dut.rst = 0;
     tb.settle();
 
-    for (int s = 0; s < STEPS; s++) {
-        const int step = step0 + s;
-        const int off  = step * HIDDEN;
+    //end of DRAIN0
+    if (!run_until(tb, SWEEP0, "SWEEP0")) return tb_report();
+    for (int i = 0; i < HIDDEN; i++)
+        CHECK_EQ((int32_t)tb.top.rootp->accel__DOT__acc_mem__DOT__mem[i],
+                 (int32_t)acc1[off1 + i], "acc1 must match the golden model");
 
-        // +1 on the first timestep for the prime; later ones are primed by the last cycle of the previous timestep
-        int ticks = WORDS * (int)ev_len[step] + (s == 0 ? 1 : 0);
-        for (int c = 0; c < ticks; c++) tb.tick();
-        cmp_acc(tb, acc1, off, step);
-        TRACE_LINE("t%d drain done at cycle %llu, %d events",
-                   step, (unsigned long long)tb.cycle(), (int)ev_len[step]);
+    //end of SWEEP0
+    if (!run_until(tb, PRIME1, "PRIME1")) return tb_report();
+    for (int i = 0; i < HIDDEN; i++)
+        CHECK_EQ((int16_t)tb.top.rootp->accel__DOT__v_mem__DOT__v[i],
+                 (int16_t)v1[off1 + i], "v1 must match the golden model");
 
-        for (int c = 0; c < WORDS; c++) tb.tick();
-        cmp_v(tb, v1, off, step);
-        TRACE_LINE("t%d sweep done at cycle %llu", step, (unsigned long long)tb.cycle());
-    }
+    //start of DRAIN1
+    if (!run_until(tb, DRAIN1, "DRAIN1")) return tb_report();
+    CHECK_EQ((int)tb.top.rootp->accel__DOT__sequencer__DOT__spk1_wr_ptr,
+             (int)gold_q.size(), "spk1 length must equal the golden spike count");
+    for (size_t i = 0; i < gold_q.size(); i++)
+        CHECK_EQ((int)tb.top.rootp->accel__DOT__spk1__DOT__mem[i], gold_q[i],
+                 "spk1 slot must hold the golden firing neuron");
+
+    //end of DRAIN1
+    
+    if (!run_until(tb, SWEEP1, "SWEEP1")) return tb_report();
+    for (int i = 0; i < OUTS; i++)
+        CHECK_EQ((int32_t)tb.top.rootp->accel__DOT__acc_mem__DOT__mem[i],
+                 (int32_t)acc2[off2 + i], "acc2 must match the golden model");
+
+    //end of SWEEP1
+    if (!run_until(tb, PRIME0, "PRIME0")) return tb_report();
+    for (int i = 0; i < OUTS; i++)
+        CHECK_EQ((int16_t)tb.top.rootp->accel__DOT__v_mem__DOT__v[128 + i],
+                 (int16_t)v2[off2 + i], "v2 must match the golden model");
 
     return tb_report();
 }
