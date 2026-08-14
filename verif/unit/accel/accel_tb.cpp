@@ -18,9 +18,17 @@ static const int T      = 20;
 static const int HIDDEN = 128;
 static const int OUTS   = 10;
 
-static const uint32_t W1_BASE  = 0x20020000u;
-static const uint32_t W2_BASE  = 0x20040000u;
-static const uint32_t EVA_BASE = 0x20001000u;
+static const uint32_t ACCEL_BASE = 0x20000000u;
+static const uint32_t W1_BASE    = 0x20020000u;
+static const uint32_t W2_BASE    = 0x20040000u;
+static const uint32_t EVA_BASE   = 0x20001000u;
+
+static const uint32_t T_ADDR       = ACCEL_BASE + 0x10u;
+static const uint32_t VTH1_ADDR    = ACCEL_BASE + 0x14u;
+static const uint32_t VTH2_ADDR    = ACCEL_BASE + 0x18u;
+static const uint32_t K_ADDR       = ACCEL_BASE + 0x1Cu;
+static const uint32_t EVA_LEN_ADDR = ACCEL_BASE + 0x24u;
+static const uint32_t EVB_LEN_ADDR = ACCEL_BASE + 0x28u;
 
 static const int V_TH1 = 248;
 static const int V_TH2 = 295;
@@ -100,14 +108,9 @@ int main() {
     dut.rst       = 1;
     dut.host_we   = 0;
     dut.host_addr = 0;
-    dut.t_max     = T;
-    dut.eva_len   = (uint16_t)ev_len[step];
-    dut.evb_len   = (uint16_t)ev_len[step];
-    dut.vth1      = V_TH1;
-    dut.vth2 = V_TH2;
-    dut.k         = K;
     tb.settle();
 
+    // write weights and event. (w_mem and ev_mem have no rst, so they keep what is written)
     for (size_t i = 0; i < w1.size(); i++) bus_write(tb, W1_BASE + 4u * (uint32_t)i, w1[i]);
     for (size_t i = 0; i < w2.size(); i++) bus_write(tb, W2_BASE + 4u * (uint32_t)i, w2[i]);
     for (uint32_t n = 0; n < ev_len[step]; n++)
@@ -115,6 +118,14 @@ int main() {
 
     dut.rst = 0;
     tb.settle();
+
+    // config after rst
+    bus_write(tb, EVA_LEN_ADDR, ev_len[step]);
+    bus_write(tb, EVB_LEN_ADDR, ev_len[step]);
+    bus_write(tb, T_ADDR,       T);
+    bus_write(tb, VTH1_ADDR,    V_TH1);
+    bus_write(tb, VTH2_ADDR,    V_TH2);
+    bus_write(tb, K_ADDR,       K);
 
     //end of DRAIN0
     if (!run_until(tb, SWEEP0, "SWEEP0")) return tb_report();

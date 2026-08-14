@@ -18,7 +18,10 @@ module sequencer (
     output [9:0] ev_idx,
     output [9:0] ev_idx_q,
     output rd_bank,
+    output count_en,
+    output count_clr, 
     output image_done
+    
 );
 
     /* verilator lint_off UNUSEDPARAM */
@@ -121,7 +124,7 @@ module sequencer (
     wire clr =(state == CLEAR) || ((state == SWEEP0 || state == SWEEP1) && word_cnt_q == word_limit);
     wire drain_done = (state==DRAIN0 || state==DRAIN1) && ev_idx_q == ev_len-1 && word_cnt_q == word_limit;
     wire sweep0_start = drain_done && state==DRAIN0;
-    wire sweep1_start = (drain_done && state==DRAIN1) || (state==PRIME1 &&spk1_wr_ptr==0);
+    wire sweep1_start = (drain_done && state==DRAIN1) || (state==PRIME1 &&spk1_wr_ptr==0 &&pending==0);
      
     always @(posedge clk) begin
         if (rst) begin
@@ -147,16 +150,16 @@ module sequencer (
             else if(sweep0_start) begin //drain0 -> sweep0
                 state <= SWEEP0;
             end
-            else if(state == SWEEP0 && word_cnt_q == word_limit) begin
+            else if(state == SWEEP0 && word_cnt_q == word_limit) begin //sweep0 -> prime1
                 state <= PRIME1;  
             end
-            else if(state == PRIME1 && pending==0 && spk1_wr_ptr!=0) begin
+            else if(state == PRIME1 && pending==0 && spk1_wr_ptr!=0) begin//prime1 -> drain1
                 state <= DRAIN1; 
             end
-            else if(sweep1_start) begin
+            else if(sweep1_start) begin//drain1 -> sweep1
                 state <= SWEEP1; 
             end
-            else if(state == SWEEP1 && word_cnt_q == word_limit) begin
+            else if(state == SWEEP1 && word_cnt_q == word_limit) begin //sweep1 -> prime0
                 state <= PRIME0;
             end
 
@@ -181,7 +184,7 @@ module sequencer (
     end
 
     reg [3:0] pending;
-    reg [6:0] spk1_wr_ptr;
+    reg [6:0] spk1_wr_ptr; //potential issue
     wire word_cnt_stall;
     wire [1:0] lane;
     assign word_cnt_stall = pending != 4'b0;
@@ -191,11 +194,13 @@ module sequencer (
     assign spk1_we = pending != 4'b0;
     assign spk1_wr_data = {group,lane}; 
     assign spk1_addr = spk1_we? spk1_wr_ptr : ev_idx[6:0];
-    
     assign ev_stall = (word_cnt != word_limit) || ((state != DRAIN0)&&(state != DRAIN1));
     assign t_stall = !(state == SWEEP1 && word_cnt_q == word_limit)  ;
-    assign image_done = t==t_max && word_cnt_q == word_limit && state == SWEEP1;
     assign rd_bank = t[0];
     assign ev_len =( layer_state==0 )?( rd_bank ? evb_len : eva_len) : {3'b0, spk1_wr_ptr};
+    assign count_en  = (state == SWEEP1);//block count till sweep1
+    assign count_clr = (state == CLEAR);
+
+    assign image_done = t==t_max-1 && word_cnt_q == word_limit && state == SWEEP1;
 
 endmodule

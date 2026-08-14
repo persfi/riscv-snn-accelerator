@@ -5,14 +5,8 @@ module accel (
     input [31:0] host_addr,
     input  [31:0] host_wdata,
     input  host_we,
-    input [4:0]  t_max,
-    input [2:0] k,
-    input [9:0]  eva_len,
-    input [9:0]  evb_len,
-    input [15:0] vth1,
-    input [15:0] vth2,
-    output image_done
-    //output [31:0] host_rdata
+    output image_done,
+    output [31:0] host_rdata
 );
 /* verilator lint_on UNUSEDSIGNAL */
 
@@ -47,24 +41,27 @@ module accel (
     //wire [9:0] ev_idx_q;
     wire [3:0] spike;
     assign v_th = layer_state? vth2:vth1;
-
+    wire count_en, count_clr;
+    wire [4:0]  t_max;
+    wire [2:0] k;
+    wire [9:0]  eva_len;
+    wire [9:0]  evb_len;
+    wire [15:0] vth1;
+    wire [15:0] vth2;
+    
     wire spk1_we;
     wire [6:0] spk1_addr;
     wire [6:0] spk1_wr_data;
     wire [6:0] spk1_rd_data;
+    wire [31:0] count_rd_data;
     
-
-    wire w1_we;
-    wire w2_we;
     wire w1_sel = (host_addr[31:16] ==  16'h2002 || host_addr[31:16] ==  16'h2003);
     wire w2_sel = (host_addr[31:16] ==  16'h2004);
-    assign w1_we = host_we && w1_sel;
-    assign w2_we = host_we && w2_sel;
-
+    wire w1_we= host_we && w1_sel;
+    wire w2_we = host_we && w2_sel;
     wire [14:0] gen_weight_addr; //from addr gen
-    wire [14:0] weight_addr;
+    wire [14:0] weight_addr = (w1_we || w2_we) ? host_addr[16:2] : gen_weight_addr;;
     wire [WEIGHT_WIDTH-1:0] weight_rdata; //from weight mem
-    assign weight_addr = (w1_we || w2_we) ? host_addr[16:2] : gen_weight_addr;
 
     ev_mem ev_mem (
         .clk(clk),
@@ -155,7 +152,40 @@ module accel (
         .ev_idx(ev_idx),
         .ev_idx_q(),
         .rd_bank(rd_bank),
+        .count_en(count_en),
+        .count_clr(count_clr),
         .image_done(image_done)
+    );
+
+    wire accel_mmio_we = host_we && (host_addr[31:12] == 20'h20000);
+    //not ev banks or weight mem
+
+    accel_mmio accel_mmio(
+        .clk(clk),
+        .rst(rst),
+        .host_addr(host_addr[7:0]),
+        .host_wdata(host_wdata),
+        .host_we(accel_mmio_we),
+        .count_rd(count_rd_data),
+        .accel_status(),
+        .host_rdata(host_rdata),
+        .t_max(t_max),
+        .vth1(vth1),
+        .vth2(vth2),
+        .k(k),
+        .start(),
+        .eva_len(eva_len),
+        .evb_len(evb_len)
+    );
+
+    count count(
+        .clk(clk),
+        .count_en(count_en),
+        .count_clr(count_clr),
+        .word_cnt_q(word_cnt_q),
+        .spike(spike),
+        .rd_idx(host_addr[3:2]),
+        .rd_data(count_rd_data)
     );
 
     /* verilator lint_on PINCONNECTEMPTY  */
