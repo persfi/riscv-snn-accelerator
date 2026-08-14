@@ -311,5 +311,10 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - update accel tb to test from image start to end of layer 2 sweep (before writing to the 10 counters) against golden model. tests 297/297 passed.
 - had to poke vth through tb → figured the mux for vth selection isnt wired in accel yet → updated it.
 
-
+## 2026-08-14
+- instance outputs are connected to wires. if connected with reg it means that you intend to drive it in the parent module. so even if the output from the module is a reg it shouldconnect to a wire. 
+- wrote count.v lint and test 22/22 passed.
+- linked count and accel_mmio to accel.v. replaced the tb poking config in accel tb cpp and changed it to the accel_mmio path → check that it works and the hostwe and mmio select is correct
+- caught a sweep1 bug: if only the last group spikes, wr ptr would be 0 when its entering the prime1. so then it will automatically trigger sweep1 start from the original wiring in sequencer, skipping drain1.  → added pending ==0 which is also the exit condition of prime1. only when prime1 is exiting does it prove wrptr=0 actually means there are no spikes.
+- imgdone bug : wrote t==t_max but it should be t==t_mx-1.
 

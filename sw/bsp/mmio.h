@@ -40,7 +40,8 @@
 #define ACCEL_EVB(i)        (*(volatile unsigned int *)(ACCEL_EVB_BASE + 4u*(i)))
 #define ACCEL_W1(i)         (*(volatile unsigned int *)(ACCEL_W1_BASE  + 4u*(i)))
 #define ACCEL_W2(i)         (*(volatile unsigned int *)(ACCEL_W2_BASE  + 4u*(i)))
-#define ACCEL_COUNT(i)      (*(volatile unsigned int *)(ACCEL_COUNT_ADDR + 4u*(i)))
+#define ACCEL_COUNT(i)      (*(volatile unsigned int *)(ACCEL_COUNT_ADDR + 4u*(i))) 
+//0x40-0x64 = 01000000 - 01100100
 
 /* STATUS bits, read-only */
 #define ACCEL_BANK_A_FREE   (1u << 0)
