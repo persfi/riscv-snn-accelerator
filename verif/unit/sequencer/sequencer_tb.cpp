@@ -45,8 +45,12 @@ static uint32_t group_spikes(const uint32_t* f, int group) {
 static void reset(Testbench<Vsequencer>& tb) {
     tb.top.rst = 1;
     tb.top.spike = 0;
+    tb.top.start = 0;
     tb.tick();
     tb.top.rst = 0;
+    tb.top.start = 1;  
+    tb.tick();
+    tb.top.start = 0;
     tb.settle();
 }
 
@@ -59,9 +63,9 @@ static std::vector<std::pair<int, int>> collect_pushes(Testbench<Vsequencer>& tb
         dut.spike = group_spikes(f, dut.word_cnt_q); //group to the spikes format the sequencer will recieve
         tb.settle();
 
-        TRACE_LINE("c=%4d ls=%d acc=%d v=%d wc=%2d wcq=%2d ev=%2d evq=%2d spike=%x we=%d",
+        TRACE_LINE("c=%4d ls=%d acc=%d v=%d wc=%2d wcq=%2d ev=%2d spike=%x we=%d",
                    guard, dut.layer_state, dut.acc_ctrl, dut.v_ctrl,
-                   dut.word_cnt, dut.word_cnt_q, dut.ev_idx, dut.ev_idx_q,
+                   dut.word_cnt, dut.word_cnt_q, dut.ev_idx,
                    dut.spike, dut.spk1_we);
 
         if (dut.spk1_we) writes.push_back({dut.spk1_addr, dut.spk1_wr_data});

@@ -48,6 +48,7 @@ module accel (
     wire [9:0]  evb_len;
     wire [15:0] vth1;
     wire [15:0] vth2;
+    wire start;
     
     wire spk1_we;
     wire [6:0] spk1_addr;
@@ -137,6 +138,7 @@ module accel (
     sequencer sequencer (
         .rst(rst),
         .clk(clk),
+        .start(start),
         .t_max(t_max),
         .eva_len(eva_len),
         .evb_len(evb_len),
@@ -150,7 +152,6 @@ module accel (
         .word_cnt(word_cnt),
         .word_cnt_q(word_cnt_q),
         .ev_idx(ev_idx),
-        .ev_idx_q(),
         .rd_bank(rd_bank),
         .count_en(count_en),
         .count_clr(count_clr),
@@ -167,13 +168,14 @@ module accel (
         .host_wdata(host_wdata),
         .host_we(accel_mmio_we),
         .count_rd(count_rd_data),
-        .accel_status(),
+        .image_done(image_done),
+        .rd_bank(rd_bank),
         .host_rdata(host_rdata),
         .t_max(t_max),
         .vth1(vth1),
         .vth2(vth2),
         .k(k),
-        .start(),
+        .start(start),
         .eva_len(eva_len),
         .evb_len(evb_len)
     );

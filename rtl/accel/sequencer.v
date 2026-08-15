@@ -1,8 +1,7 @@
 module sequencer (
     input rst,
     input clk,
-    
-    //input start,
+    input start,
     input [4:0] t_max, //20
     input [9:0] eva_len, evb_len,
     input [3:0] spike,
@@ -16,12 +15,10 @@ module sequencer (
     output [4:0] word_cnt, //to weight_addr
     output reg [4:0] word_cnt_q, //to acc and v read and write
     output [9:0] ev_idx,
-    output [9:0] ev_idx_q,
     output rd_bank,
     output count_en,
     output count_clr, 
     output image_done
-    
 );
 
     /* verilator lint_off UNUSEDPARAM */
@@ -39,12 +36,12 @@ module sequencer (
     localparam [2:0] PRIME1 = 3'd4;
     localparam [2:0] DRAIN1 = 3'd5;
     localparam [2:0] SWEEP1 = 3'd6;
+    localparam [2:0] IDLE = 3'd7;
 
     reg [2:0] state;
-    
     wire [4:0] t;
     wire [9:0] ev_len;
-
+    reg [9:0] ev_idx_q;
     wire [4:0] word_limit = layer_state ? 5'd2 : 5'd31;
     
     //time_step counter
@@ -78,7 +75,7 @@ module sequencer (
 
     always @(*) begin  
         case (state)
-            CLEAR: begin //start of img
+            CLEAR: begin //per img
                 v_ctrl = V_CLEAR_ALL;
                 acc_ctrl = ACC_CLEAR_ALL;
                 layer_state = 0;
@@ -113,7 +110,7 @@ module sequencer (
                  acc_ctrl = ACC_CLEAR;
                  layer_state = 1;
                 end
-            default: begin 
+            IDLE: begin 
                 v_ctrl = V_IDLE ; 
                 acc_ctrl = ACC_IDLE;
                 layer_state = 0;
@@ -121,14 +118,14 @@ module sequencer (
         endcase
     end
 
-    wire clr =(state == CLEAR) || ((state == SWEEP0 || state == SWEEP1) && word_cnt_q == word_limit);
+    wire clr = (state == CLEAR ) || (state == IDLE )|| ((state == SWEEP0 || state == SWEEP1) && word_cnt_q == word_limit);
     wire drain_done = (state==DRAIN0 || state==DRAIN1) && ev_idx_q == ev_len-1 && word_cnt_q == word_limit;
     wire sweep0_start = drain_done && state==DRAIN0;
     wire sweep1_start = (drain_done && state==DRAIN1) || (state==PRIME1 &&spk1_wr_ptr==0 &&pending==0);
      
     always @(posedge clk) begin
         if (rst) begin
-            state <= CLEAR;
+            state <= IDLE;
             ev_idx_q <= 0;
             word_cnt_q <= 0;
         end
@@ -139,7 +136,10 @@ module sequencer (
             end
 
             //state change conditions
-            if(state == CLEAR) begin//clear-> prime0
+            if(state==IDLE && start) begin
+                state<=CLEAR;
+            end
+            else if(state == CLEAR) begin//clear-> prime0
                 state <= PRIME0;
                 ev_idx_q <= 0;
                 word_cnt_q <= 0;
@@ -150,7 +150,8 @@ module sequencer (
             else if(sweep0_start) begin //drain0 -> sweep0
                 state <= SWEEP0;
             end
-            else if(state == SWEEP0 && word_cnt_q == word_limit &&pending==0) begin //sweep0 -> prime1
+            else if(state == SWEEP0 && word_cnt_q == word_limit &&pending==0) begin
+                 //sweep0 -> prime1
                 state <= PRIME1;  
             end
             else if(state == PRIME1 && pending==0 && spk1_wr_ptr!=0) begin//prime1 -> drain1
@@ -159,10 +160,10 @@ module sequencer (
             else if(sweep1_start) begin//drain1 -> sweep1
                 state <= SWEEP1; 
             end
-            else if(state == SWEEP1 && word_cnt_q == word_limit) begin //sweep1 -> prime0
-                state <= PRIME0;
+            else if(state == SWEEP1 && word_cnt_q == word_limit) begin 
+                //sweep1 -> prime0 or idle
+                state <= image_done ? IDLE : PRIME0;
             end
-
         end
     end
 
@@ -201,6 +202,7 @@ module sequencer (
     assign count_en  = (state == SWEEP1);//block count till sweep1
     assign count_clr = (state == CLEAR);
 
-    assign image_done = t==t_max-1 && word_cnt_q == word_limit && state == SWEEP1;
+    assign image_done = t==t_max-1 && word_cnt_q == word_limit && state == SWEEP1; 
+    //wordlimit = 2
 
 endmodule

@@ -318,4 +318,5 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - caught a sweep1 bug: if only the last group spikes, wr ptr would be 0 when its entering the prime1. so then it will automatically trigger sweep1 start from the original wiring in sequencer, skipping drain1.  → added pending ==0 which is also the exit condition of prime1. only when prime1 is exiting does it prove wrptr=0 actually means there are no spikes.
 - imgdone bug : wrote t==t_max but it should be t==t_mx-1.
 - sweep0 exit bug during accel 20 timesteps test: original exit condition is if state = sweep0 and wordcntq=limit, but if theres a pending spike on group30, wordcntq still advances to 31 before stalling, so the conditions would be met and state advaces to prime1, locking v and acc so that the lif of word_cnt_q=31 never writes back → added && pending==0 condition that make sure wordcntq =31 is considered before beiing skipped.
-- created accel tb over all 20timesteps of an image against golden model. lint and test 6091/6091 passed/
+- tested sequencer tb with updated rst start path, 1113/1113 tests passed
+- created accel tb over all 20timesteps of all 10 images against golden model. lint and test 60861/60861 passed
