@@ -1,7 +1,7 @@
 
 ## 1. Overview 
 
-This is a RTL design project that creates from scratch a RISC-V RV32I cpu and a two layer LIF SNN (Leaky Integrate and Fire Spiking Neuron Network) accelerator built on top of the cpu core. 
+This is an RTL design project that creates from scratch a RISC-V RV32I cpu and a two layer LIF SNN (Leaky Integrate and Fire Spiking Neuron Network) accelerator built on top of the cpu core. 
 
 This project demonstrates:
 1. A complete vertical stack of a SNN accelerator
@@ -9,10 +9,10 @@ This project demonstrates:
     b. Trained 2 layer LIF SNN model with MNIST dataset (97.6% test accuracy) for image classification that produced the golden reference model for the inference accelerator.
     c. Custom accelerator that processed testcases with x28 fewer cycles (75510 vs 2127999 cycles on core)
     d. Thorough unit and datapath verification using C++, Assembly, and the golden reference model.
-2. Statically structured system with cycle counts dependent only to the input data.
-    a. Every datapath is fixed, so no cycle has two posible next actions.
+2. Statically structured system with cycle counts dependent only on the input data.
+    a. Every datapath is fixed, so no cycle has two possible next actions.
 
-## 1. System Architecture 
+## 2. System Architecture 
 
 ### Memory map
 
@@ -83,7 +83,7 @@ per image:
             read COUNT[0..2], unpack 10 counts, argmax on the host
 ```
 
-## 2. Decisions & Rejected Alternatives
+## 3. Decisions & Rejected Alternatives
 
 ### D1: What FPGA board to run on
 **Chose:** Arty A7 100T 
@@ -157,7 +157,7 @@ Consider DE1-SoC for September port target (accelerator fabric, own core stays a
 **Because:** The ALU was already verified at ten operations; routing branches through it reopens a verified block. The branch funct3 codes also don't map directly to the ALU's, so sharing also needs translation logic (the textbook wires branches to the ALU because it only implements BEQ, which needs just a subtract-and-check-zero). A dedicated comparator costs a small number of LUTs out of 63k.
 **Revisit if:** The core is pipelined.
 
-## 8. Verification
+## 4. Verification
 
 ### RISC-V core: riscv-tests results
 
