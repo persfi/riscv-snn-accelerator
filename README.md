@@ -1,6 +1,6 @@
-# RISC-V CPU core + Statically-Scheduled SNN Accelerator
+# RISC-V CPU core + Event-Driven SNN Accelerator
 
-RV32I core driving an event-driven spiking-neural-network accelerator, scheduled at compile time.
+RV32I core driving a spiking-neural-network accelerator. Fixed dataflow and memory layout with no arbiters, but cycle count is data-dependent.
 
 > [!NOTE]
 > Design rationale, memory map, and rejected alternatives are in **[DESIGN.md →](DESIGN.md)**

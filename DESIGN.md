@@ -168,7 +168,7 @@ Consider DE1-SoC for September port target (accelerator fabric, own core stays a
 | Failed | 0 |
 | Excluded | 2 (ma_data, fence_i) |
 
-Run against the unmodified upstream rv32ui test bodies, via a minimal, CSR/trap-free environment (verif/env) built for this core.
+Run against the unmodified upstream rv32ui test bodies, via a CSR/trap-free environment (verif/env) built for this core.
 
 | Excluded test | Reason |
 |---|---|
