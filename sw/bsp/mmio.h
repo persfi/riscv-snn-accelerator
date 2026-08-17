@@ -14,7 +14,8 @@
 #define ACCEL_W1_BASE       0x20020000u
 #define ACCEL_W2_BASE       0x20040000u
 
-#define ACCEL_T_ADDR        (ACCEL_BASE + 0x10u)   //host writes T to accel
+#define ACCEL_T_ADDR        (ACCEL_BASE + 0x10u)  
+//host writes T to accel
 #define ACCEL_VTH1_ADDR     (ACCEL_BASE + 0x14u)
 #define ACCEL_VTH2_ADDR     (ACCEL_BASE + 0x18u)
 #define ACCEL_K_ADDR        (ACCEL_BASE + 0x1Cu)
@@ -31,6 +32,7 @@
 #define ACCEL_K             (*(volatile unsigned int *)(ACCEL_K_ADDR))
 #define ACCEL_START         (*(volatile unsigned int *)(ACCEL_START_ADDR))
 #define ACCEL_STATUS        (*(volatile unsigned int *)(ACCEL_STATUS_ADDR))
+/* reserved:  hidden size is fixed at 128 */
 #define ACCEL_L1_SHIFT      (*(volatile unsigned int *)(ACCEL_L1_SHIFT_ADDR))
 
 #define ACCEL_EVA_LEN       (*(volatile unsigned int *)(ACCEL_EVA_LEN_ADDR))
@@ -40,8 +42,9 @@
 #define ACCEL_EVB(i)        (*(volatile unsigned int *)(ACCEL_EVB_BASE + 4u*(i)))
 #define ACCEL_W1(i)         (*(volatile unsigned int *)(ACCEL_W1_BASE  + 4u*(i)))
 #define ACCEL_W2(i)         (*(volatile unsigned int *)(ACCEL_W2_BASE  + 4u*(i)))
-#define ACCEL_COUNT(i)      (*(volatile unsigned int *)(ACCEL_COUNT_ADDR + 4u*(i))) 
-//0x40-0x64 = 01000000 - 01100100
+/* four per word. */
+#define ACCEL_COUNT_W(w)    (*(volatile unsigned int *)(ACCEL_COUNT_ADDR + 4u*(w)))
+#define ACCEL_COUNT(i)      ((ACCEL_COUNT_W((i) >> 2) >> (8u*((i) & 3u))) & 0xFFu)
 
 /* STATUS bits, read-only */
 #define ACCEL_BANK_A_FREE   (1u << 0)

@@ -1,4 +1,17 @@
 
+## 1. Overview 
+
+This is a RTL design project that creates from scratch a RISC-V RV32I cpu and a two layer LIF SNN (Leaky Integrate and Fire Spiking Neuron Network) accelerator built on top of the cpu core. 
+
+This project demonstrates:
+1. A complete vertical stack of a SNN accelerator
+    a. RISC-V RV32I core that passed the RISC-V official rv32ui test
+    b. Trained 2 layer LIF SNN model with MNIST dataset (97.6% test accuracy) for image classification that produced the golden reference model for the inference accelerator.
+    c. Custom accelerator that processed testcases with x28 fewer cycles (75510 vs 2127999 cycles on core)
+    d. Thorough unit and datapath verification using C++, Assembly, and the golden reference model.
+2. Statically structured system with cycle counts dependent only to the input data.
+    a. Every datapath is fixed, so no cycle has two posible next actions.
+
 ## 1. System Architecture 
 
 ### Memory map
@@ -33,35 +46,41 @@ All within the accelerator control region, so addresses are `0x2000_0000 + offse
 |0x2000_0014 |VTH1 |config | W | 16 | layer 1 threshold, signed|
 |0x2000_0018 |VTH2 |config | W | 16 |layer 2 threshold, signed|
 |0x2000_001C | K |config| W | 3 | parameter for leak shift, 1..5|
-|0x2000_0030 |L1_SHIFT|config| W | 3 | log2(hidden_neurons/4), 3..5|
-|0x2000_0020 | START |doorbell|W| — |  begin image; data ignored|
-|0x2000_0024 | EVA_LEN |doorbell|W | 10 | store count and mark bank A full, 0..784|
-|0x2000_0028 | EVB_LEN|doorbell| W | 10 | store count and mark bank B full, 0..784|
-|0x2000_002C | STATUS| status| R | 3 |bit0 bank_a_free, bit1 bank_b_free, bit2 image_done|
-|0x2000_0040 + 4i | COUNT[i]|result | R | 8 | output spike count for class i, 0..T|
+|0x2000_0020 | START |doorbell|W| — |  begin image pulse, doorbell data ignored|
+|0x2000_0024 | EVA_LEN |config, per timestep|W | 10 | event count for bank A, 0..784; writing to it also marks bank full
+|0x2000_0028 | EVB_LEN|config, per timestep| W | 10 | event count for bank B, 0..784; writing to it also marks bank full
+|0x2000_002C | STATUS| status| R | 3 |3bits: {image_done, bank_b_free, bank_a_free}|
+|0x2000_0030 |L1_SHIFT|reserved| — | 3 | **to be implemented**|
+|0x2000_0040 + 4w | COUNT[w]|result | R | 32 | four counts per word; each byte = `4w+lane`;w = 0..2 
 
 Shared Regions
 
-|Region| Memory | Written By | Read By | Concurrent |
+|Region| Memory (expected) | Written By | Read By | Concurrent |
 | ------|-------- | -------  | ------- |------- |
-|ev bank A |LUTRAM| host, MMIO|drain| never (2 separate banks)|
-|ev bank B |LUTRAM| host, MMIO| drain| never (2 separate banks)|
-|w1|BRAM| host, at boot|drain|never |
-|w2|BRAM| host, at boot|drain|never |
+|ev bank A |LUTRAM| host, per timestep|drain| never (2 separate banks)|
+|ev bank B |LUTRAM| host, per timestep| drain| never (2 separate banks)|
+|w1|BRAM| host, once at boot|drain|never (seperate by stages) |
+|w2|BRAM| host, once at boot|drain|never (seperate by stages) |
+
+Host contract:
+- write event length after writing an event bank to mark bank full.
+- read COUNT before writing START for the next image.
 
 ### Sequence
 
 ```
-boot:       L1_SHIFT, T, VTH1, VTH2, K
+boot:       T, VTH1, VTH2, K
             fill w1[0..25087], w2[0..511]
 
-per image:  START
-            for t in 0..T-1:
-                wait STATUS.bank_free for the wanted bank
-                fill that bank with spike indices
-                write LEN
+per image:  
+            fill bank A with t=0's spike events, write EVA_LEN
+            START
+            for t in 0..T-1:                
+                wait STATUS.bank_free for the opposite of current timestep read bank
+                fill it with timestep t+1's spike events
+                write that bank's LEN
             wait STATUS.image_done
-            read COUNT[0..9], argmax on the host
+            read COUNT[0..2], unpack 10 counts, argmax on the host
 ```
 
 ## 2. Decisions & Rejected Alternatives

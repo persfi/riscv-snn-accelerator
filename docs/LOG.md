@@ -320,3 +320,7 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - sweep0 exit bug during accel 20 timesteps test: original exit condition is if state = sweep0 and wordcntq=limit, but if theres a pending spike on group30, wordcntq still advances to 31 before stalling, so the conditions would be met and state advaces to prime1, locking v and acc so that the lif of word_cnt_q=31 never writes back → added && pending==0 condition that make sure wordcntq =31 is considered before beiing skipped.
 - tested sequencer tb with updated rst start path, 1113/1113 tests passed
 - created accel tb over all 20timesteps of all 10 images against golden model. lint and test 60861/60861 passed
+
+## 2026-08-15
+- update DESIGN.md. Gradually fill in the design essentials.
+- edited mmio count so that the core can au=ctually get the per byte: accel count w(0) is the raw 32 bit word while accel count(0)is the actual value of that neuron
