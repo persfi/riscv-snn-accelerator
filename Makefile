@@ -16,7 +16,7 @@ ISA_DIR     := verif/riscv-tests/isa
 ENV_DIR     := verif/env
 MACROS_DIR  := $(ISA_DIR)/macros/scalar
 CORE_RTL    := $(shell find rtl/core -name '*.v')
-SOC_RTL     := $(CORE_RTL) rtl/soc/soc.v
+SOC_RTL     := $(CORE_RTL) rtl/soc/soc.v $(wildcard rtl/accel/*.v)
 TB_DIR      := $(BUILD_DIR)/riscv-tests
 SIM_DIR     := $(BUILD_DIR)/core-sim
 SIM         := $(SIM_DIR)/core_sim
@@ -89,7 +89,7 @@ hex:
 $(SIM): $(SOC_RTL) verif/harness/riscv_test_runner.cpp verif/harness/tb_harness.h
 	@mkdir -p $(SIM_DIR)
 	verilator --cc --exe --build -Wall --trace --top-module soc \
-		-Irtl/core -CFLAGS "-I$(CURDIR)/verif/harness" \
+		-Irtl/core -Irtl/accel -CFLAGS "-I$(CURDIR)/verif/harness" \
 		--Mdir $(SIM_DIR) -o core_sim \
 		$(SOC_RTL) verif/harness/riscv_test_runner.cpp
 
@@ -98,7 +98,7 @@ $(SIM): $(SOC_RTL) verif/harness/riscv_test_runner.cpp verif/harness/tb_harness.
 $(SOC_RUN): $(SOC_RTL) verif/harness/soc_runner.cpp verif/harness/tb_harness.h
 	@mkdir -p $(RUN_DIR)
 	verilator --cc --exe --build -Wall --trace --top-module soc \
-		-Irtl/core -CFLAGS "-I$(CURDIR)/verif/harness" \
+		-Irtl/core -Irtl/accel -CFLAGS "-I$(CURDIR)/verif/harness" \
 		--Mdir $(RUN_DIR) -o soc_run \
 		$(SOC_RTL) verif/harness/soc_runner.cpp
 

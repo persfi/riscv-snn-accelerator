@@ -9,7 +9,8 @@ module soc #(
     output print_sel,
     output [7:0] print_data,
     output exit_sel,
-    output [31:0] exit_code 
+    output [31:0] exit_code,
+    output  image_done
 );
 
     localparam [31:0] DMEM_SIZE_BYTES = DMEM_DEPTH * 4;
@@ -22,16 +23,20 @@ module soc #(
     wire [31:0] core_d_wdata;
     wire [31:0] core_d_rdata;
     wire [31:0] dmem_rdata;
+    wire [31:0] accel_rdata;
     wire core_d_we;
     wire [3:0] core_d_wstrb;
     wire dmem_sel;
-    
+    wire accel_sel;
+
     assign exit_sel = (core_d_addr == EXIT_ADDR) && core_d_we;
     assign exit_code = core_d_wdata;
     assign print_sel = (core_d_addr == PRINT_ADDR) && core_d_we;
     assign print_data = core_d_wdata[7:0];
     assign dmem_sel = core_d_addr < DMEM_SIZE_BYTES;
-    assign core_d_rdata = dmem_sel ? dmem_rdata : 32'b0;
+    assign core_d_rdata = dmem_sel ? dmem_rdata : 
+                    accel_sel? accel_rdata: 32'b0;
+    assign accel_sel = core_d_addr[31:28] == 4'h2;
 
     core core (
         .clk(clk),
@@ -45,6 +50,16 @@ module soc #(
         .d_we(core_d_we),
         .d_wstrb(core_d_wstrb),
         .d_rdata(core_d_rdata)
+    );
+
+    accel accel (
+        .clk(clk),
+        .rst(rst),
+        .host_addr(core_d_addr),
+        .host_wdata(core_d_wdata),
+        .host_we(core_d_we && accel_sel),
+        .image_done(image_done),
+        .host_rdata(accel_rdata)
     );
 
     dmem #(
