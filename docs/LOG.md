@@ -335,3 +335,5 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - simplified make commands and added print int mmio so that integers can be passed without needed to convert to char or pass twice. 
 - emitted images.hex from export vectors to generate image.h
 - makefile/hex to c script generated via cc (infrastructure)
+- edited makefile and checked image0's per timestep spike counts via mmio_print_int against the golden models ev_len(first 20)
+- added readmemh to weight mem so that it reads weights before boot. saving 2/3 space from loading into expanded imem and dmem

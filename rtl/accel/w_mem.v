@@ -1,5 +1,6 @@
 module w_mem #(
     parameter DEPTH = 25088,
+    parameter INIT_FILE = "",
     localparam AW = $clog2(DEPTH) //rounds to 15/9
 )(
     input clk,
@@ -13,11 +14,15 @@ module w_mem #(
     /* verilator lint_on UNUSEDPARAM */
 
     reg [WEIGHT_WIDTH-1:0] mem [0:DEPTH-1];  
+    initial if (INIT_FILE != "") $readmemh(INIT_FILE, mem);
+
     always @(posedge clk) begin
         if(we) begin
             mem[addr] <= wdata;
         end
         rdata <= mem[addr];
     end
+
+  
 
 endmodule

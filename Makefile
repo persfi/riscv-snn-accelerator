@@ -116,6 +116,7 @@ LDSCRIPT := $(BSP)/linker.ld
 CRT0     := $(BSP)/crt0.S
 # An app may be asm or C; take whichever exists.
 APP_SRC   = $(firstword $(wildcard sw/apps/$(APP).S sw/apps/$(APP).c))
+LIBSNN    := $(wildcard sw/libsnn/*.c)
 
 # Build crt0 + the app against the bsp, then flatten to $readmemh hex.
 # -lgcc goes last: -nostdlib omits it, but C multiply/divide lower to libgcc
@@ -125,7 +126,7 @@ sw-build:
 	@test -n "$(APP_SRC)" || (echo "no sw/apps/$(APP).S or sw/apps/$(APP).c"; exit 1)
 	@mkdir -p $(SW_DIR)
 	$(CC) $(ARCH_FLAGS) -O1 -nostdlib -nostartfiles -I$(BSP) \
-		-T$(LDSCRIPT) $(CRT0) $(APP_SRC) -o $(SW_DIR)/$(APP).elf -lgcc
+		-T$(LDSCRIPT) $(CRT0) $(APP_SRC) $(LIBSNN) -o $(SW_DIR)/$(APP).elf -lgcc
 	$(OBJCOPY) -O binary $(SW_DIR)/$(APP).elf $(SW_DIR)/$(APP).bin
 	od -An -tx4 --endian=little -v $(SW_DIR)/$(APP).bin > $(SW_DIR)/$(APP).hex
 
@@ -171,6 +172,28 @@ test-core: $(SIM) $(addprefix $(TB_DIR)/,$(addsuffix .hex,$(RV32UI)))
 	echo "rv32ui: $$pass passed, $$fail failed  (excluded:$(addprefix ,$(RVTEST_EXCLUDE)))"; \
 	test -z "$$failed" || { echo "failed:$$failed"; exit 1; }
 
+# --- encoder check ------------------------------------------------------------
+
+VEC_DIR := verif/vectors/snn_h128_k2_T20
+ENC_APP := encode
+ENC_MAX := 5000000
+
+test-encode:
+	@$(MAKE) --no-print-directory sw-build APP=$(ENC_APP) >/dev/null
+	@$(MAKE) --no-print-directory $(SOC_RUN) >/dev/null 2>&1
+	@img=$$(sed -n 's/^#define IMAGE_INDEX *\([0-9]*\).*/\1/p' sw/libsnn/image.h); \
+	$(SOC_RUN) $(SW_DIR)/$(ENC_APP).hex $(ENC_MAX) 2>/dev/null \
+		| grep -v '^%' > $(BUILD_DIR)/enc.got; \
+	grep -v '^//' $(VEC_DIR)/ev_len.hex | sed -n "$$((img*20+1)),$$((img*20+20))p" \
+		| sed 's/^0*//' > $(BUILD_DIR)/enc.want; \
+	if diff -u $(BUILD_DIR)/enc.want $(BUILD_DIR)/enc.got > $(BUILD_DIR)/enc.diff; then \
+		echo "encoder: image $$img, 20/20 timestep counts match golden"; \
+	else \
+		echo "encoder: MISMATCH on image $$img  (want | got)"; \
+		paste $(BUILD_DIR)/enc.want $(BUILD_DIR)/enc.got | cat -n; \
+		exit 1; \
+	fi
+
 # --- shortcuts ---------------------------------------------------------------
 # `make u-accel`      instead of  `make test-unit BLOCK=accel`
 # `make app-hello`    instead of  `make sw-app APP=hello`
@@ -198,5 +221,5 @@ check:
 	$(MAKE) --no-print-directory test-core 2>&1 | tail -1 || rc=1; \
 	exit $$rc
 
-.PHONY: freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one check
+.PHONY: test-encode freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one check
 

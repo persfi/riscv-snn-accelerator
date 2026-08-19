@@ -289,10 +289,8 @@ int main() {
   dut.host_addr = 0;
   tb.settle();
 
-  for (size_t i = 0; i < w1.size(); i++)
-    bus_write(tb, W1_BASE + 4u * (uint32_t)i, w1[i]);
-  for (size_t i = 0; i < w2.size(); i++)
-    bus_write(tb, W2_BASE + 4u * (uint32_t)i, w2[i]);
+  /* weights arrive via $readmemh(INIT_FILE) in w_mem, not over the bus.*/
+  tb.tick(); //reset clk
 
   dut.rst = 0;
   tb.settle();
