@@ -118,6 +118,7 @@ def main():
     emit("counts", counts,                        2, "output spike totals over T") #max T=20
     emit("pred",   pred,                          1, "golden argmax classification")
     emit("labels", labels[idx].astype(np.int32),  1, "MNIST ground truth")
+    emit("images", images[idx], 2, "raw MNIST pixels, uint8")
 
     lanes = 4
     w1_words = cfg["hidden_size"] // lanes

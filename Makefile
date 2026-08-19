@@ -62,7 +62,7 @@ test-unit:
 	@test -n "$(RTL_FILE)" || (echo "no rtl module named $(BLOCK).v under rtl/"; exit 1)
 	mkdir -p $(BUILD_DIR)/$(BLOCK)
 	verilator --cc --exe --build -Wall --trace \
-		--top-module $(TOP_MODULE) -Irtl/core -I$(dir $(RTL_FILE)) \
+		--top-module $(TOP_MODULE) -Irtl/core -Irtl/accel -I$(dir $(RTL_FILE)) \
 		-CFLAGS "-I$(CURDIR)/verif/harness" \
 		--Mdir $(BUILD_DIR)/$(BLOCK) \
 		-o $(BLOCK)_tb \
@@ -171,5 +171,32 @@ test-core: $(SIM) $(addprefix $(TB_DIR)/,$(addsuffix .hex,$(RV32UI)))
 	echo "rv32ui: $$pass passed, $$fail failed  (excluded:$(addprefix ,$(RVTEST_EXCLUDE)))"; \
 	test -z "$$failed" || { echo "failed:$$failed"; exit 1; }
 
-.PHONY: freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one
+# --- shortcuts ---------------------------------------------------------------
+# `make u-accel`      instead of  `make test-unit BLOCK=accel`
+# `make app-hello`    instead of  `make sw-app APP=hello`
+# `make dump-hello`   instead of  `make sw-dump APP=hello`
+u-%:
+	@$(MAKE) --no-print-directory test-unit BLOCK=$*
+
+app-%:
+	@$(MAKE) --no-print-directory sw-app APP=$* MAX=$(MAX)
+
+dump-%:
+	@$(MAKE) --no-print-directory sw-dump APP=$*
+
+# every unit suite, then the riscv-tests suite;
+UNIT_BLOCKS := $(sort $(notdir $(wildcard verif/unit/*)))
+check:
+	@rc=0; \
+	for b in $(UNIT_BLOCKS); do \
+		printf '%-12s' "$$b"; \
+		$(MAKE) --no-print-directory test-unit BLOCK=$$b 2>&1 | tail -1 || rc=1; \
+	done; \
+	printf '%-12s' "lint"; \
+	$(MAKE) --no-print-directory lint >/dev/null 2>&1 && echo "clean" || { echo "FAILED"; rc=1; }; \
+	printf '%-12s' "riscv-tests"; \
+	$(MAKE) --no-print-directory test-core 2>&1 | tail -1 || rc=1; \
+	exit $$rc
+
+.PHONY: freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one check
 

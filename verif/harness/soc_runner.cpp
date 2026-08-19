@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
     while (tb.cycle() < max_cycles) {
         tb.tick();
         if (dut.print_sel) std::putchar((int)dut.print_data);
+        if (dut.print_int_sel) std::printf("%x\n", (unsigned)dut.print_int_data);
         if (dut.exit_sel) {
             const uint32_t code = dut.exit_code;
             std::fflush(stdout);

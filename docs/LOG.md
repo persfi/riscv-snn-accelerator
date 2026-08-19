@@ -329,4 +329,9 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - connected accel and core with soc.
 - accel output accel rdata, cannt wire the port to host rdataa or else the mux and the accel will both be driving host rdata, causing lint errors (the first driver will be used, which is the mux). → fixed, lint passed
 
-
+## 2026-08-18
+- added image encoding in c in libsnn. #include "" search in own directory while <> searches system include directories in usr/indlude or -I flags 
+- wang32 is ibjective thats what makes it uniform.
+- simplified make commands and added print int mmio so that integers can be passed without needed to convert to char or pass twice. 
+- emitted images.hex from export vectors to generate image.h
+- makefile/hex to c script generated via cc (infrastructure)

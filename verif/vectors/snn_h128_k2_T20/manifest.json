@@ -143,6 +143,15 @@
       "digits": 1,
       "note": "MNIST ground truth"
     },
+    "images": {
+      "file": "images.hex",
+      "shape": [
+        10,
+        784
+      ],
+      "digits": 2,
+      "note": "raw MNIST pixels, uint8"
+    },
     "w1": {
       "file": "w1.hex",
       "shape": [

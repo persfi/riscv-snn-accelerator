@@ -7,7 +7,9 @@ module soc #(
     output [31:0] inst,
     output unknown_op,
     output print_sel,
+    output print_int_sel,
     output [7:0] print_data,
+    output [31:0] print_int_data,
     output exit_sel,
     output [31:0] exit_code,
     output  image_done
@@ -28,11 +30,14 @@ module soc #(
     wire [3:0] core_d_wstrb;
     wire dmem_sel;
     wire accel_sel;
+    
 
     assign exit_sel = (core_d_addr == EXIT_ADDR) && core_d_we;
     assign exit_code = core_d_wdata;
     assign print_sel = (core_d_addr == PRINT_ADDR) && core_d_we;
-    assign print_data = core_d_wdata[7:0];
+    assign print_int_sel = (core_d_addr == PRINT_INT_ADDR) && core_d_we;
+    assign print_data = print_sel?core_d_wdata[7:0]:8'b0;
+    assign print_int_data = print_int_sel?core_d_wdata[31:0]:32'b0;
     assign dmem_sel = core_d_addr < DMEM_SIZE_BYTES;
     assign core_d_rdata = dmem_sel ? dmem_rdata : 
                     accel_sel? accel_rdata: 32'b0;

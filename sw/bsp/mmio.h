@@ -4,8 +4,10 @@
 
 #define PRINT_ADDR 0x10000000u
 #define EXIT_ADDR  0x10000004u
+#define PRINT_INT_ADDR 0x10000008u
 
 #define MMIO_PRINT (*(volatile unsigned char *)(PRINT_ADDR))
+#define MMIO_PRINT_INT (*(volatile unsigned int *)(PRINT_INT_ADDR))
 #define MMIO_EXIT  (*(volatile unsigned int *)(EXIT_ADDR))
 
 #define ACCEL_BASE          0x20000000u
