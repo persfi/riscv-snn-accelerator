@@ -50,6 +50,7 @@ module accel (
     wire [15:0] vth2;
     wire start;
     
+    wire bank_ready;
     wire spk1_we;
     wire [6:0] spk1_addr;
     wire [6:0] spk1_wr_data;
@@ -139,6 +140,7 @@ module accel (
         .rst(rst),
         .clk(clk),
         .start(start),
+        .bank_ready(bank_ready),
         .t_max(t_max),
         .eva_len(eva_len),
         .evb_len(evb_len),
@@ -176,6 +178,7 @@ module accel (
         .vth2(vth2),
         .k(k),
         .start(start),
+        .bank_ready(bank_ready),
         .eva_len(eva_len),
         .evb_len(evb_len)
     );

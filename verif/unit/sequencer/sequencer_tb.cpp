@@ -46,6 +46,7 @@ static void reset(Testbench<Vsequencer>& tb) {
     tb.top.rst = 1;
     tb.top.spike = 0;
     tb.top.start = 0;
+    tb.top.bank_ready = 1;
     tb.tick();
     tb.top.rst = 0;
     tb.top.start = 1;  

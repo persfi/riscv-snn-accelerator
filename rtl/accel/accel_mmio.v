@@ -16,8 +16,9 @@ module accel_mmio(
     output reg [15:0] vth1, vth2,
     output reg [2:0]  k, 
     output start,
+    output bank_ready,
     output reg [9:0]  eva_len, evb_len
-    
+
 );
 /* verilator lint_on UNUSEDSIGNAL */
 
@@ -86,7 +87,8 @@ module accel_mmio(
                          32'b0;
     assign start = (host_we && host_addr == 8'h20);
     assign accel_status = {done_q,b_free_q,a_free_q};
-
+    assign bank_ready = rd_bank ? !b_free_q : !a_free_q;
+    
 endmodule
 
 

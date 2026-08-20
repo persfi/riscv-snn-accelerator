@@ -2,6 +2,7 @@ module sequencer (
     input rst,
     input clk,
     input start,
+    input bank_ready,
     input [4:0] t_max, //20
     input [9:0] eva_len, evb_len,
     input [3:0] spike,
@@ -144,7 +145,7 @@ module sequencer (
                 ev_idx_q <= 0;
                 word_cnt_q <= 0;
             end
-            else if(state == PRIME0) begin //prime0 -> drain0
+            else if(state == PRIME0 && bank_ready) begin //prime0 -> drain0
                 state <= DRAIN0;
             end
             else if(sweep0_start) begin //drain0 -> sweep0

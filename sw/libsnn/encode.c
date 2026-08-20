@@ -1,5 +1,4 @@
 #include "encode.h"
-
 #include "image.h"
 
 unsigned int wang32(unsigned int x) {
@@ -20,7 +19,7 @@ int encode_timestep(int img, int t, volatile unsigned int* bank) {
     unsigned int ctr =
         ((unsigned int)img << 15) | ((unsigned int)t << 10) | (unsigned int)p;
     if ((wang32(key ^ ctr) & 0xFFu) < image[p]) {
-      bank[n] = (unsigned int)p;
+      bank[n] = (unsigned int)p; //unsigned int 32 bits so every increment of n is addr+4, matches the eva mmio declaration
       n++;
     }
   }

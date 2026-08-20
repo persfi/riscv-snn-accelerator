@@ -337,3 +337,9 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - makefile/hex to c script generated via cc (infrastructure)
 - edited makefile and checked image0's per timestep spike counts via mmio_print_int against the golden models ev_len(first 20)
 - added readmemh to weight mem so that it reads weights before boot. saving 2/3 space from loading into expanded imem and dmem
+
+## 2026-08-19
+- added a bank_ready signal bc i realized host needs to write bank when bank free but accel drains when bank ready. if host is still writing accel shouldn't drain.
+- host writes way slower than accel so the bank ready is necessary (even for safety it should still exist)
+- in tb event data was directly written to bank without checking any free signals and without encoding its way faster than accel so no problem ever occured then.
+- volatile stops the compiler from moving things around and messing up the hardware sequence
