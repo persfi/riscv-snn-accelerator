@@ -1,13 +1,13 @@
 
 ## 1. Overview 
 
-This is an RTL design project that creates from scratch a RISC-V RV32I cpu and a two layer LIF SNN (Leaky Integrate and Fire Spiking Neuron Network) accelerator built on top of the cpu core. 
+This is an RTL design project that creates from scratch a RISC-V RV32I CPU and a two layer LIF SNN (Leaky Integrate and Fire Spiking Neuron Network) accelerator built as a peripheral of the CPU core. 
 
 This project demonstrates:
 1. A complete vertical stack of a SNN accelerator
     a. RISC-V RV32I core that passed the RISC-V official rv32ui test
     b. Trained 2 layer LIF SNN model with MNIST dataset (97.6% test accuracy) for image classification that produced the golden reference model for the inference accelerator.
-    c. Custom accelerator that processed testcases with x28 fewer cycles (75510 vs 2127999 cycles on core)
+    c. Custom accelerator that processed testcases with 28x fewer cycles (75510 vs 2127999 cycles on core)
     d. Thorough unit and datapath verification using C++, Assembly, and the golden reference model.
 2. Statically structured system with cycle counts dependent only on the input data.
     a. Every datapath is fixed, so no cycle has two possible next actions.
@@ -29,6 +29,7 @@ Data Space  (load/store)
 |0x0000_0000 – 0x0000_0FFF| 4KB | dmem | R/W|
 |0x1000_0000| 4B | PRINT | W |
 |0x1000_0004| 4B| EXIT| W|
+|0x1000_0008| 4B| PRINT_INT| W|
 |0x2000_0000 – 0x2000_0FFF| 4KB | accel control| R/W|
 |0x2000_1000 – 0x2000_1FFF| 4KB| event bank A|W|
 |0x2000_2000 – 0x2000_2FFF| 4KB| event bank B|W|
@@ -59,8 +60,8 @@ Shared Regions
 | ------|-------- | -------  | ------- |------- |
 |ev bank A |LUTRAM| host, per timestep|drain| never (2 separate banks)|
 |ev bank B |LUTRAM| host, per timestep| drain| never (2 separate banks)|
-|w1|BRAM| host, once at boot|drain|never (seperate by stages) |
-|w2|BRAM| host, once at boot|drain|never (seperate by stages) |
+|w1|BRAM| preloaded before reset|drain|never (separate by stages) |
+|w2|BRAM| preloaded before reset|drain|never (separate by stages) |
 
 Host contract:
 - write event length after writing an event bank to mark bank full.
@@ -70,7 +71,7 @@ Host contract:
 
 ```
 boot:       T, VTH1, VTH2, K
-            fill w1[0..25087], w2[0..511]
+            w1/w2 preloaded before reset
 
 per image:  
             fill bank A with t=0's spike events, write EVA_LEN
