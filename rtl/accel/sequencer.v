@@ -3,7 +3,7 @@ module sequencer (
     input clk,
     input start,
     input bank_ready,
-    input [4:0] t_max, //20
+    input [4:0] t_max, 
     input [9:0] eva_len, evb_len,
     input [3:0] spike,
 
@@ -186,10 +186,10 @@ module sequencer (
     end
 
     reg [3:0] pending;
-    reg [6:0] spk1_wr_ptr; //potential issue
+    reg [6:0] spk1_wr_ptr;
     wire word_cnt_stall;
     wire [1:0] lane;
-    assign word_cnt_stall = pending != 4'b0;
+    assign word_cnt_stall = pending != 4'b0 || (state==PRIME0 && !bank_ready);
     assign lane = pending[0] ? 2'd0 :
               pending[1] ? 2'd1 :
               pending[2] ? 2'd2 : 2'd3;
@@ -204,6 +204,5 @@ module sequencer (
     assign count_clr = (state == CLEAR);
 
     assign image_done = t==t_max-1 && word_cnt_q == word_limit && state == SWEEP1; 
-    //wordlimit = 2
 
 endmodule

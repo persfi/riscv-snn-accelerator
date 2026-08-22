@@ -343,3 +343,16 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - host writes way slower than accel so the bank ready is necessary (even for safety it should still exist)
 - in tb event data was directly written to bank without checking any free signals and without encoding its way faster than accel so no problem ever occured then.
 - volatile stops the compiler from moving things around and messing up the hardware sequence
+
+## 2026-08-20
+-soc runner cyc limit was capped at 200000 which wasnt enough for one image inference → prints error msg → increased the cap to 3000000.
+- wrote the c driver and updated makefile to test the whole system(test-system) including the c driver.
+- test system failed → figured that the new bank_ready means the accel will wait at prime0 and start draining until bank_ready==1, and word_cnt runs continuously so word_cnt_q loops with it as well. After bank_ready, the word_cnt_q very likely would not be 0 anymore, so that acc saves to the wrong memory.
+-tb passes because it's write to bank uses event idxes directly from golden vectors so that theres no encoding cycles, making it way quicker than the accelerator → the accelerator never tested bank_ready=0 + prime0 becuase bank_ready was always ==1 in tb
+
+## 2026-08-21
+- added a word_cnt stall in sequencer to prime0 before bank_ready → system-test 10/10 (each image's final prediction + spike counts for each class) passed
+- changed word cnt stall instead of clr because clr is non blocking so when bank is ready, it will zero the conuter by the first cycle of drain, but word_cnt should be 1 and not 0 at that time(it needs to gen addr for weight read).
+
+
+
