@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
     }
     const char* hex_path = argv[1];
     const uint64_t max_cycles =
-        (argc > 2) ? std::strtoull(argv[2], nullptr, 0) : 200000;
+        (argc > 2) ? std::strtoull(argv[2], nullptr, 0) : 3000000;
 
     Testbench<Vsoc> tb("verif/build/soc-run/run.vcd");
     auto& dut  = tb.top;
