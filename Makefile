@@ -194,6 +194,40 @@ test-encode:
 		exit 1; \
 	fi
 
+# --- full system check --------------------------------------------------------
+# The C app on the core drives the accelerator over the bus; per-class spike
+# totals and the argmax must match the golden model on every image. image.h
+# is regenerated per image, so it is saved and put back afterwards.
+SYS_APP    := mnist
+SYS_MAX    := 5000000
+SYS_IMAGES := 10
+
+test-system: $(SOC_RUN)
+	@mkdir -p $(BUILD_DIR)
+	@cp sw/libsnn/image.h $(BUILD_DIR)/image.h.bak
+	@grep -v '^//' $(VEC_DIR)/counts.hex | sed 's/^0*//;s/^$$/0/' > $(BUILD_DIR)/sys.counts
+	@grep -v '^//' $(VEC_DIR)/pred.hex   | sed 's/^0*//;s/^$$/0/' > $(BUILD_DIR)/sys.pred
+	@pass=0; fail=0; \
+	for i in $$(seq 0 $$(($(SYS_IMAGES)-1))); do \
+		python3 scripts/gen_image_h.py $$i >/dev/null; \
+		$(MAKE) --no-print-directory sw-build APP=$(SYS_APP) >/dev/null 2>&1; \
+		$(SOC_RUN) $(SW_DIR)/$(SYS_APP).hex $(SYS_MAX) 2>/dev/null \
+			| grep -v '^%' > $(BUILD_DIR)/sys.got; \
+		sed -n "$$((i*10+1)),$$((i*10+10))p" $(BUILD_DIR)/sys.counts > $(BUILD_DIR)/sys.want; \
+		sed -n "$$((i+1))p" $(BUILD_DIR)/sys.pred >> $(BUILD_DIR)/sys.want; \
+		if diff -q $(BUILD_DIR)/sys.want $(BUILD_DIR)/sys.got >/dev/null; then \
+			printf "  \033[32mPASS\033[0m image %d\n" $$i; pass=$$((pass+1)); \
+		else \
+			printf "  \033[31mFAIL\033[0m image %d  (want | got; rows 1-10 = class counts, row 11 = argmax)\n" $$i; \
+			paste $(BUILD_DIR)/sys.want $(BUILD_DIR)/sys.got | cat -n; \
+			fail=$$((fail+1)); \
+		fi; \
+	done; \
+	cp $(BUILD_DIR)/image.h.bak sw/libsnn/image.h; \
+	echo "-----"; \
+	echo "system: $$pass/$(SYS_IMAGES) images match golden counts and argmax"; \
+	test $$fail -eq 0
+
 # --- shortcuts ---------------------------------------------------------------
 # `make u-accel`      instead of  `make test-unit BLOCK=accel`
 # `make app-hello`    instead of  `make sw-app APP=hello`
@@ -221,5 +255,5 @@ check:
 	$(MAKE) --no-print-directory test-core 2>&1 | tail -1 || rc=1; \
 	exit $$rc
 
-.PHONY: test-encode freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one check
+.PHONY: test-encode test-system freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one check
 
