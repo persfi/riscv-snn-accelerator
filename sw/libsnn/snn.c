@@ -2,11 +2,24 @@
 #include "encode.h"
 #include "snn.h"
 
-void snn_config(int t, int k, int vth1, int vth2) {
+static int snn_argmax(void);
+
+static int h_shift(int hidden) {
+  int words = hidden >> 2;
+  int shift = 0;
+  while (words > 1) {
+    words >>= 1;
+    shift++;
+  }
+  return shift;
+}
+
+void snn_config(int t, int k, int vth1, int vth2, int hidden) {
   ACCEL_T = t;
   ACCEL_K = k;
   ACCEL_VTH1 = vth1;
   ACCEL_VTH2 = vth2;
+  ACCEL_H_SHIFT = h_shift(hidden);
 }
 
 int snn_run_image(int img, int t_max) {
@@ -29,7 +42,7 @@ int snn_run_image(int img, int t_max) {
   return snn_argmax();
 }
 
-int snn_argmax(void) {
+static int snn_argmax(void) {
   int max = 0;
   int max_idx = 0;
   for (int i = 0; i < 3; i++) {
