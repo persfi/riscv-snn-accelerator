@@ -210,7 +210,10 @@ test-system: $(SOC_RUN)
 	@pass=0; fail=0; \
 	for i in $$(seq 0 $$(($(SYS_IMAGES)-1))); do \
 		python3 scripts/gen_image_h.py $$i >/dev/null; \
-		$(MAKE) --no-print-directory sw-build APP=$(SYS_APP) >/dev/null 2>&1; \
+		if ! out=`$(MAKE) --no-print-directory sw-build APP=$(SYS_APP) 2>&1`; then \
+			printf "  \033[31mFAIL\033[0m image %d: sw-build failed\n" $$i; \
+			echo "$$out" | grep -m3 -i error; fail=$$((fail+1)); continue; \
+		fi; \
 		$(SOC_RUN) $(SW_DIR)/$(SYS_APP).hex $(SYS_MAX) 2>/dev/null \
 			| grep -v '^%' > $(BUILD_DIR)/sys.got; \
 		sed -n "$$((i*10+1)),$$((i*10+10))p" $(BUILD_DIR)/sys.counts > $(BUILD_DIR)/sys.want; \
@@ -247,12 +250,18 @@ check:
 	@rc=0; \
 	for b in $(UNIT_BLOCKS); do \
 		printf '%-12s' "$$b"; \
-		$(MAKE) --no-print-directory test-unit BLOCK=$$b 2>&1 | tail -1 || rc=1; \
+		out=`$(MAKE) --no-print-directory test-unit BLOCK=$$b 2>&1`; st=$$?; \
+		line=`echo "$$out" | grep 'checks passed' | tail -1`; \
+		test -n "$$line" || line=`echo "$$out" | tail -1`; \
+		echo "$$line"; \
+		test $$st -eq 0 || rc=1; \
 	done; \
 	printf '%-12s' "lint"; \
 	$(MAKE) --no-print-directory lint >/dev/null 2>&1 && echo "clean" || { echo "FAILED"; rc=1; }; \
 	printf '%-12s' "riscv-tests"; \
-	$(MAKE) --no-print-directory test-core 2>&1 | tail -1 || rc=1; \
+	out=`$(MAKE) --no-print-directory test-core 2>&1`; st=$$?; \
+	echo "$$out" | tail -1; \
+	test $$st -eq 0 || rc=1; \
 	exit $$rc
 
 .PHONY: test-encode test-system freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one check
