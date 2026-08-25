@@ -354,5 +354,12 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - added a word_cnt stall in sequencer to prime0 before bank_ready → system-test 10/10 (each image's final prediction + spike counts for each class) passed
 - changed word cnt stall instead of clr because clr is non blocking so when bank is ready, it will zero the conuter by the first cycle of drain, but word_cnt should be 1 and not 0 at that time(it needs to gen addr for weight read).
 
+## 2026-08-25
+- added the shift register so the model can be built with 32/64/128 neurons for the hidden layer
+- it cannot take 60 because the ev_rd_data shift for weight addr gen is a power of 2. 60's shift value is still 4, which still does ev_rd_data*16 and not *15. It will only work if the weight hex is padded with 0 to 16 per row, which is unecessary since I only wanted to validate that more than 1 hidden size works.
+- lint and unit test/system tests still passes after adding the shift register(and correcting the tbs).
+-  (w1_we || w2_we) ? host_addr[16:2] is for the tb. actual fpga run uses readmemh.
+- readmemh saves the space because if its loading after boot, the weights needs to be stored in core because it's not derived in core, it's a file from pc, so it takes up a way larger imem and dmem (more than the current size it's defined)
+- accidentally passed string got w1_init and w2_init instead of macro. macro needs "`".  → changed it, error resolved.
 
 

@@ -1,5 +1,10 @@
 
-
+`ifndef W1_INIT
+  `define W1_INIT "verif/vectors/snn_h128_k2_T20/w1.hex"
+`endif
+`ifndef W2_INIT
+  `define W2_INIT "verif/vectors/snn_h128_k2_T20/w2.hex"
+`endif
 
 module weight_mem (
     input clk,
@@ -17,7 +22,7 @@ module weight_mem (
     wire [WEIGHT_WIDTH-1:0] w1_rdata, w2_rdata;
 
     //run from project root for the correct init file path
-    w_mem #(.DEPTH(25088), .INIT_FILE("verif/vectors/snn_h128_k2_T20/w1.hex")) w1 (
+    w_mem #(.DEPTH(25088), .INIT_FILE(`W1_INIT)) w1 (
         .clk(clk),
         .we(w1_we),
         .addr(weight_addr),
@@ -26,7 +31,7 @@ module weight_mem (
     );
 
     
-    w_mem #(.DEPTH(512), .INIT_FILE("verif/vectors/snn_h128_k2_T20/w2.hex")) w2 (
+    w_mem #(.DEPTH(512), .INIT_FILE(`W2_INIT)) w2 (
         .clk(clk),
         .we(w2_we),
         .addr(weight_addr[8:0]), // 2bits(3(12/4)words) + 7bits(clog2(128))

@@ -4,6 +4,9 @@ localparam WEIGHT_WIDTH  = LANES * 8;   // weight-memory read width
 localparam V_WIDTH = LANES * 16; //each is 16 bits
 localparam ACC_WIDTH = LANES * 32; //each is 32 bits
 
+localparam H_MAX = 128; //32 words
+localparam H_SHIFT_W = 5;
+
 // acc_mem operation select
 localparam [1:0] ACC_IDLE  = 2'b00;
 localparam [1:0] ACC_WRITE = 2'b01;   // drain: accumulate into the group

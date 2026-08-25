@@ -44,6 +44,7 @@ module accel (
     wire count_en, count_clr;
     wire [4:0]  t_max;
     wire [2:0] k;
+    wire [2:0] shift;
     wire [9:0]  eva_len;
     wire [9:0]  evb_len;
     wire [15:0] vth1;
@@ -105,6 +106,7 @@ module accel (
         .word_cnt(word_cnt),
         .ev_rd_data(ev_rd_data),
         .spk1_rd_data(spk1_rd_data),
+        .shift(shift),
         .weight_addr(gen_weight_addr)
     );
 
@@ -145,6 +147,7 @@ module accel (
         .eva_len(eva_len),
         .evb_len(evb_len),
         .spike(spike),
+        .shift(shift),
         .spk1_we(spk1_we),
         .spk1_addr(spk1_addr),
         .spk1_wr_data(spk1_wr_data),
@@ -177,6 +180,7 @@ module accel (
         .vth1(vth1),
         .vth2(vth2),
         .k(k),
+        .shift(shift),
         .start(start),
         .bank_ready(bank_ready),
         .eva_len(eva_len),

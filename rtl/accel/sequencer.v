@@ -6,6 +6,7 @@ module sequencer (
     input [4:0] t_max, 
     input [9:0] eva_len, evb_len,
     input [3:0] spike,
+    input [2:0] shift,
 
     output spk1_we,
     output [6:0] spk1_addr,
@@ -43,7 +44,7 @@ module sequencer (
     wire [4:0] t;
     wire [9:0] ev_len;
     reg [9:0] ev_idx_q;
-    wire [4:0] word_limit = layer_state ? 5'd2 : 5'd31;
+    wire [4:0] word_limit = layer_state ? 5'd2 : (1<<shift) -1;
     
     //time_step counter
     counter #(.W(5)) c_t (

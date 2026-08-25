@@ -32,6 +32,7 @@ static const uint32_t START_ADDR = ACCEL_BASE + 0x20u;
 static const uint32_t EVA_LEN_ADDR = ACCEL_BASE + 0x24u;
 static const uint32_t EVB_LEN_ADDR = ACCEL_BASE + 0x28u;
 static const uint32_t STATUS_ADDR = ACCEL_BASE + 0x2Cu;
+static const uint32_t H_SHIFT_ADDR = ACCEL_BASE + 0x30u;
 static const uint32_t COUNT_ADDR = ACCEL_BASE + 0x40u;
 static const uint32_t UNMAPPED_ADDR = ACCEL_BASE + 0x34u;
 
@@ -43,6 +44,7 @@ static const uint32_t IMAGE_DONE_BIT = 1u << 2;
 static const int V_TH1 = 248;
 static const int V_TH2 = 295;
 static const int K = 2;
+static const int H_SHIFT = 5;  
 
 enum {
   CLEAR = 0,
@@ -300,6 +302,7 @@ int main() {
   bus_write(tb, VTH1_ADDR, V_TH1);
   bus_write(tb, VTH2_ADDR, V_TH2);
   bus_write(tb, K_ADDR, K);
+  bus_write(tb, H_SHIFT_ADDR, H_SHIFT);
 
   for (int img = 0; img < IMAGES; img++)
     if (!run_image(tb, img)) return tb_report();

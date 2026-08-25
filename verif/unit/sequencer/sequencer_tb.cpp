@@ -20,6 +20,7 @@ static const int T_STEPS = 20;
 static const int HIDDEN  = 128;
 static const int N_IMAGES = 10;
 static const int LANES   = 4;
+static const int H_SHIFT = 5;
 
 // Short event lists keep DRAIN0 to 64 cycles. 
 static const int EV_LEN = 2;
@@ -84,6 +85,7 @@ int main() {
     dut.t_max   = T_STEPS;
     dut.eva_len = EV_LEN;
     dut.evb_len = EV_LEN;
+    dut.shift   = H_SHIFT;
 
     // --- part 1: image start ------------------------------------------------
     reset(tb);

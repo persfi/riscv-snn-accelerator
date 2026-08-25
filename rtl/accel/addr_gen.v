@@ -3,12 +3,13 @@ module addr_gen(
     input [4:0] word_cnt,
     input [9:0] ev_rd_data,
     input [6:0] spk1_rd_data,
+    input [2:0] shift,
     output reg [14:0] weight_addr
 );
 
     always @(*) begin
         if(layer_state==0) begin
-            weight_addr = {ev_rd_data,word_cnt};
+            weight_addr = ({5'b0,ev_rd_data}<<shift) + {10'b0,word_cnt};
         end
         else begin
             weight_addr = {{6{1'b0}},spk1_rd_data,word_cnt[1:0]};

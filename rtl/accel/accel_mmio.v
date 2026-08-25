@@ -15,6 +15,7 @@ module accel_mmio(
     output reg [4:0]  t_max,
     output reg [15:0] vth1, vth2,
     output reg [2:0]  k, 
+    output reg [2:0] shift,
     output start,
     output bank_ready,
     output reg [9:0]  eva_len, evb_len
@@ -35,6 +36,7 @@ module accel_mmio(
             k <= 0;
             eva_len  <= 0;
             evb_len  <= 0;
+            shift<=0;
         end 
         else if (host_we) begin
             case (host_addr)
@@ -45,6 +47,7 @@ module accel_mmio(
                 8'h1C: k <= host_wdata[2:0];
                 8'h24: eva_len  <= host_wdata[9:0];
                 8'h28: evb_len  <= host_wdata[9:0];
+                8'h30: shift <= host_wdata[2:0];
             endcase
         end
     end
