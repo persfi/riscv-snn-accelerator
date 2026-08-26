@@ -3,6 +3,7 @@
 #include "snn.h"
 
 static int snn_argmax(void);
+static int cfg_t;
 
 static int h_shift(int hidden) {
   int words = hidden >> 2;
@@ -20,13 +21,14 @@ void snn_config(int t, int k, int vth1, int vth2, int hidden) {
   ACCEL_VTH1 = vth1;
   ACCEL_VTH2 = vth2;
   ACCEL_H_SHIFT = h_shift(hidden);
+  cfg_t = t;
 }
 
-int snn_run_image(int img, int t_max) {
+int snn_run_image(int img) {
   ACCEL_EVA_LEN = encode_timestep(img, 0, &ACCEL_EVA(0));
   ACCEL_START = 1;
 
-  for (int i = 1; i < t_max; i++) {
+  for (int i = 1; i < cfg_t; i++) {
     while (1) {
       if (i % 2 == 0 && (ACCEL_BANK_A_FREE & ACCEL_STATUS)) {
         ACCEL_EVA_LEN = encode_timestep(img, i, &ACCEL_EVA(0));
