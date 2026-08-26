@@ -67,7 +67,7 @@ test-unit:
 		--Mdir $(BUILD_DIR)/$(BLOCK) \
 		-o $(BLOCK)_tb \
 		$(RTL_INPUTS) verif/unit/$(BLOCK)/$(BLOCK)_tb.cpp
-	$(BUILD_DIR)/$(BLOCK)/$(BLOCK)_tb
+	$(BUILD_DIR)/$(BLOCK)/$(BLOCK)_tb $(ARGS)
 
 dump-asm:
 	@test -n "$(FILE)" || (echo "usage: make dump-asm FILE=<path-to.s>"; exit 1)

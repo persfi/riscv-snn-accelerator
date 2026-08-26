@@ -361,5 +361,9 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 -  (w1_we || w2_we) ? host_addr[16:2] is for the tb. actual fpga run uses readmemh.
 - readmemh saves the space because if its loading after boot, the weights needs to be stored in core because it's not derived in core, it's a file from pc, so it takes up a way larger imem and dmem (more than the current size it's defined)
 - accidentally passed string got w1_init and w2_init instead of macro. macro needs "`".  → changed it, error resolved.
+- h64 accel test failed → foudn that ive been passing h128 thresholds as acc matches perfectly but v came out 14 lower (which is the threshold diff). → added a find key from manifest json function so that it uses the values thats from the model thats currently being tested
+- ran k=2 for hidden sizes of 64 and 32, exported their golden model, and validated that the accel does produce the correct result for different hidden sizes. → accel tb 33495/33495 passed for hidden=64 and 19331/19331 passed for hidden = 32
+- changed accel tb such that the different weights could be loaded from bus without using readmemh and different thresholds come from manifest json instead of being hardcoded
+- changed mnist.c so that there's no two T inputs one controlling the counter one controlling the bank selection from core as they should be the same → added a static int saved while config is called so snn run automatically gets the same T
 
 

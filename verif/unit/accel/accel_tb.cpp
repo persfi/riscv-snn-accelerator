@@ -1,6 +1,3 @@
-// Two full images, 20 timesteps each, against the golden model at every state
-// boundary, plus the host read path for status and the output counts.
-
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -10,13 +7,17 @@
 #include "Vaccel___024root.h"
 #include "tb_harness.h"
 
-static const char* VEC = "verif/vectors/snn_h128_k2_T20/";
+// Vector directory comes from argv[1] so one build can run every hidden size.
+static std::string VEC = "verif/vectors/snn_h128_k2_T20/";
 
 static const int IMAGES = 10;
 static const int T = 20;
-static const int HIDDEN = 128;
 static const int OUTS = 10;
 static const int LANES = 4;
+
+// Both derived from the vectors once they are loaded
+static int HIDDEN = 128;
+static int H_SHIFT = 5;
 
 static const uint32_t ACCEL_BASE = 0x20000000u;
 static const uint32_t W1_BASE = 0x20020000u;
@@ -41,10 +42,9 @@ static const uint32_t BANK_A_FREE_BIT = 1u << 0;
 static const uint32_t BANK_B_FREE_BIT = 1u << 1;
 static const uint32_t IMAGE_DONE_BIT = 1u << 2;
 
-static const int V_TH1 = 248;
-static const int V_TH2 = 295;
-static const int K = 2;
-static const int H_SHIFT = 5;  
+static int V_TH1 = 248;
+static int V_TH2 = 295;
+static int K = 2;
 
 enum {
   CLEAR = 0,
@@ -80,6 +80,32 @@ static std::vector<uint32_t> read_hex(const std::string& path) {
       out.push_back((uint32_t)std::strtoul(tok.c_str(), nullptr, 16));
   }
   return out;
+}
+
+// find the "key" after the "after" in the manifest json file
+static int manifest_int(const std::string& key, const char* after = nullptr) {
+  std::ifstream in(VEC + "manifest.json");
+  if (!in) {
+    std::fprintf(stderr, "cannot open %smanifest.json\n", VEC.c_str());
+    std::exit(1);
+  }
+  std::string all((std::istreambuf_iterator<char>(in)),
+                  std::istreambuf_iterator<char>());
+  size_t from = 0;
+  if (after) {
+    from = all.find(std::string("\"") + after + "\"");
+    if (from == std::string::npos) {
+      std::fprintf(stderr, "no \"%s\" in manifest\n", after);
+      std::exit(1);
+    }
+  }
+  size_t p = all.find("\"" + key + "\"", from);
+  if (p == std::string::npos) {
+    std::fprintf(stderr, "no \"%s\" in manifest\n", key.c_str());
+    std::exit(1);
+  }
+  p = all.find(':', p);
+  return (int)std::strtol(all.c_str() + p + 1, nullptr, 10);
 }
 
 static void bus_write(Testbench<Vaccel>& tb, uint32_t addr, uint32_t data) {
@@ -120,6 +146,14 @@ static void fill_bank(Testbench<Vaccel>& tb, int step, bool bank_b) {
   for (uint32_t n = 0; n < ev_len[step]; n++)
     bus_write(tb, base + 4u * n, ev_idx[ev_start[step] + n]);
   bus_write(tb, bank_b ? EVB_LEN_ADDR : EVA_LEN_ADDR, ev_len[step]);
+}
+
+//tb uploads weights instead of using readmemh for different model validation
+static void upload_weights(Testbench<Vaccel>& tb) {
+  for (size_t i = 0; i < w1.size(); i++)
+    bus_write(tb, W1_BASE + 4u * (uint32_t)i, w1[i]);
+  for (size_t i = 0; i < w2.size(); i++)
+    bus_write(tb, W2_BASE + 4u * (uint32_t)i, w2[i]);
 }
 
 // One image, start to IDLE. Assumes the accelerator is sitting in IDLE and the
@@ -264,7 +298,12 @@ static bool run_image(Testbench<Vaccel>& tb, int img) {
   return true;
 }
 
-int main() {
+int main(int argc, char** argv) {
+  if (argc > 1) {
+    VEC = argv[1];
+    if (VEC.back() != '/') VEC += '/';
+  }
+
   w1 = read_hex(std::string(VEC) + "w1.hex");
   w2 = read_hex(std::string(VEC) + "w2.hex");
   ev_idx = read_hex(std::string(VEC) + "ev_idx.hex");
@@ -283,6 +322,25 @@ int main() {
     acc += ev_len[i];
   }
 
+  //find hidden and shift
+  HIDDEN = (int)(v1.size() / (size_t)(IMAGES * T));
+  H_SHIFT = 0;
+  for (int w = HIDDEN / LANES; w > 1; w >>= 1) H_SHIFT++;
+
+  V_TH1 = manifest_int("fc1", "v_th_int");
+  V_TH2 = manifest_int("fc2", "v_th_int");
+  K = manifest_int("k"); 
+  //finding the correct fc1,fc2, and k from manifest json for different models
+
+  //check that the pre pritten consts T and IMAGE assumed in tb matches the manifest config.
+  if (manifest_int("T") != T || manifest_int("n_images") != IMAGES) {
+    std::fprintf(stderr, "manifest T/n_images do not match this bench\n");
+    return 1;
+  }
+  //print run shape
+  std::fprintf(stderr, "[accel_tb] %s hidden=%d h_shift=%d vth=%d/%d k=%d\n",
+               VEC.c_str(), HIDDEN, H_SHIFT, V_TH1, V_TH2, K);
+
   Testbench<Vaccel> tb("verif/build/accel/accel.vcd");
   auto& dut = tb.top;
 
@@ -291,11 +349,12 @@ int main() {
   dut.host_addr = 0;
   tb.settle();
 
-  /* weights arrive via $readmemh(INIT_FILE) in w_mem, not over the bus.*/
   tb.tick(); //reset clk
 
   dut.rst = 0;
   tb.settle();
+
+  upload_weights(tb);
 
   // boot-time config: written once
   bus_write(tb, T_ADDR, T);
