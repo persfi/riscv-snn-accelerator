@@ -9,6 +9,12 @@ OBJDUMP := $(CROSS_COMPILE)objdump
 NM      := $(CROSS_COMPILE)nm
 
 RTL_SOURCES := $(shell find rtl -name '*.v')
+
+# SHAPE controls the which network to use across config to weight load
+SHAPE      := snn_h128_k2_T20
+WEIGHT_DEFS = -DW1_INIT='"$(VEC_DIR)/w1.hex"' -DW2_INIT='"$(VEC_DIR)/w2.hex"'
+GOLDEN_RUN := model/training/runs/$(SHAPE)
+VEC_DIR    := verif/vectors/$(SHAPE)
 BUILD_DIR   := verif/build
 
 # --- riscv-tests (rv32ui) ---------------------------------------------------
@@ -22,7 +28,7 @@ SIM_DIR     := $(BUILD_DIR)/core-sim
 SIM         := $(SIM_DIR)/core_sim
 
 # --- bare-metal app runner --------------------------------------------------
-RUN_DIR     := $(BUILD_DIR)/soc-run
+RUN_DIR     := $(BUILD_DIR)/soc-run-$(SHAPE)
 SOC_RUN     := $(RUN_DIR)/soc_run
 # Excluded, pre-committed (DESIGN.md): ma_data (misaligned, stricter than
 # the ISA mandates) and fence_i (Zifencei, meaningless on split memory).
@@ -37,11 +43,14 @@ clean:
 	rm -rf verif/build
 
 # --- golden model -----------------------------------------------------------
-GOLDEN_RUN := model/training/runs/snn_h128_k2_T20
 VECTOR_N   := 10
 
 vectors:
 	$(PYTHON) model/golden/export_vectors.py --run $(GOLDEN_RUN) --n $(VECTOR_N)
+
+# Compile a trained run into sw/libsnn/netcfg.h for the driver.
+netcfg:
+	$(PYTHON) tools/snnc/snnc.py $(GOLDEN_RUN)
 
 check-golden:
 	$(PYTHON) model/golden/check_vs_float.py --run $(GOLDEN_RUN) --n 10000
@@ -89,7 +98,7 @@ hex:
 $(SIM): $(SOC_RTL) verif/harness/riscv_test_runner.cpp verif/harness/tb_harness.h
 	@mkdir -p $(SIM_DIR)
 	verilator --cc --exe --build -Wall --trace --top-module soc \
-		-Irtl/core -Irtl/accel -CFLAGS "-I$(CURDIR)/verif/harness" \
+		-Irtl/core -Irtl/accel $(WEIGHT_DEFS) -CFLAGS "-I$(CURDIR)/verif/harness" \
 		--Mdir $(SIM_DIR) -o core_sim \
 		$(SOC_RTL) verif/harness/riscv_test_runner.cpp
 
@@ -98,7 +107,7 @@ $(SIM): $(SOC_RTL) verif/harness/riscv_test_runner.cpp verif/harness/tb_harness.
 $(SOC_RUN): $(SOC_RTL) verif/harness/soc_runner.cpp verif/harness/tb_harness.h
 	@mkdir -p $(RUN_DIR)
 	verilator --cc --exe --build -Wall --trace --top-module soc \
-		-Irtl/core -Irtl/accel -CFLAGS "-I$(CURDIR)/verif/harness" \
+		-Irtl/core -Irtl/accel $(WEIGHT_DEFS) -CFLAGS "-I$(CURDIR)/verif/harness" \
 		--Mdir $(RUN_DIR) -o soc_run \
 		$(SOC_RTL) verif/harness/soc_runner.cpp
 
@@ -121,7 +130,7 @@ LIBSNN    := $(wildcard sw/libsnn/*.c)
 # Build crt0 + the app against the bsp, then flatten to $readmemh hex.
 # -lgcc goes last: -nostdlib omits it, but C multiply/divide lower to libgcc
 # helpers (__mulsi3, __divsi3), which are plain RV32I and run on the core.
-sw-build:
+sw-build: netcfg
 	@test -n "$(APP)" || (echo "usage: make sw-build APP=<name>  (sw/apps/<name>.S or .c)"; exit 1)
 	@test -n "$(APP_SRC)" || (echo "no sw/apps/$(APP).S or sw/apps/$(APP).c"; exit 1)
 	@mkdir -p $(SW_DIR)
@@ -174,7 +183,6 @@ test-core: $(SIM) $(addprefix $(TB_DIR)/,$(addsuffix .hex,$(RV32UI)))
 
 # --- encoder check ------------------------------------------------------------
 
-VEC_DIR := verif/vectors/snn_h128_k2_T20
 ENC_APP := encode
 ENC_MAX := 5000000
 
@@ -205,6 +213,8 @@ SYS_IMAGES := 10
 test-system: $(SOC_RUN)
 	@mkdir -p $(BUILD_DIR)
 	@cp sw/libsnn/image.h $(BUILD_DIR)/image.h.bak
+	@cp sw/libsnn/netcfg.h $(BUILD_DIR)/netcfg.h.bak 2>/dev/null || true
+	@$(MAKE) --no-print-directory netcfg >/dev/null
 	@grep -v '^//' $(VEC_DIR)/counts.hex | sed 's/^0*//;s/^$$/0/' > $(BUILD_DIR)/sys.counts
 	@grep -v '^//' $(VEC_DIR)/pred.hex   | sed 's/^0*//;s/^$$/0/' > $(BUILD_DIR)/sys.pred
 	@pass=0; fail=0; \
@@ -227,6 +237,7 @@ test-system: $(SOC_RUN)
 		fi; \
 	done; \
 	cp $(BUILD_DIR)/image.h.bak sw/libsnn/image.h; \
+	test -f $(BUILD_DIR)/netcfg.h.bak && cp $(BUILD_DIR)/netcfg.h.bak sw/libsnn/netcfg.h; \
 	echo "-----"; \
 	echo "system: $$pass/$(SYS_IMAGES) images match golden counts and argmax"; \
 	test $$fail -eq 0
@@ -264,5 +275,5 @@ check:
 	test $$st -eq 0 || rc=1; \
 	exit $$rc
 
-.PHONY: test-encode test-system freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one check
+.PHONY: netcfg test-encode test-system freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one check
 
