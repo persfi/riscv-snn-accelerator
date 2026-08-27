@@ -366,4 +366,8 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - changed accel tb such that the different weights could be loaded from bus without using readmemh and different thresholds come from manifest json instead of being hardcoded
 - changed mnist.c so that there's no two T inputs one controlling the counter one controlling the bank selection from core as they should be the same → added a static int saved while config is called so snn run automatically gets the same T
 
-
+## 2026-08-26
+- added netcfg that's emited from snnc.py, which gathers the wanted parameters values from the run files. It should be run on pc before compiling app and core boot.
+- added SHAPE to makefile to drive the correct network model in both the sw and the rtl.
+- hidden 32/64/128, test system passed.
+- make app doesnt regenerate netcfg, wired SHAPE to it → bug fixed
