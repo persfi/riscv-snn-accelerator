@@ -371,3 +371,10 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - added SHAPE to makefile to drive the correct network model in both the sw and the rtl.
 - hidden 32/64/128, test system passed.
 - make app doesnt regenerate netcfg, wired SHAPE to it → bug fixed
+
+## 2026-08-27
+- change the readmemh file in dmem so it loads the same hex as imem. added the macro so i can define the path outside verilog for vivado
+- added accelerator decisions a1-a5 in DESIGN.md and updated memory map
+- created acc, v and weights distribution in docs/img to visualize and verify that they do not exceed their boundaries. (across all three models max|acc| = 2,402, max|v| = 8,874, so 3.7× headroom in int16)
+- trained deferred reset and got int accuracy of 0.9702 over the 0.9763 of immediate reset (float 0.9725 vs 0.9759, both from check_vs_float)
+- check vs float emits whatever the config it is currently in model.py so make sure model.py contains the correct config
