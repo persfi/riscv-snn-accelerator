@@ -1,3 +1,7 @@
+`ifndef PROGRAM
+  `define PROGRAM "program.hex"
+`endif
+
 
 /* verilator lint_off UNUSEDSIGNAL */
 module dmem # (
@@ -16,7 +20,7 @@ module dmem # (
     reg [31:0] mem [0:DEPTH-1] /* verilator public_flat_rw */;
 
     initial begin 
-        $readmemh("data.hex", mem); 
+        $readmemh(`PROGRAM, mem); 
         // search for it in whatever directory the simulation is run at
     end
 

@@ -1,3 +1,6 @@
+`ifndef PROGRAM
+  `define PROGRAM "program.hex"
+`endif
 
 /* verilator lint_off UNUSEDSIGNAL */
 module imem # (
@@ -13,7 +16,7 @@ module imem # (
 
     //runs exactly once at the start of simulation, loads hex file into mem array.
     initial begin 
-        $readmemh("program.hex", mem); 
+        $readmemh(`PROGRAM, mem); 
         // search for it in whatever directory the simulation is run at
     end
 
