@@ -253,9 +253,9 @@ Consider DE1-SoC for September target, to demonstrate vendor portability.
 
 **Rejected:** accumulate arriving weights (acc) in an `int16` register and storing membrane v in `int32` register.
 
-**Because:** for int8 weights, the measured values of v and acc stay well inside int16 (across all three models max|acc| = 2,402, max|v| = 8,874, see docs/img for value distribution). Acc is int32 because it has to cover the worst case: 784*127 = 99568 in the hidden layer, which exceeds int16's 32767. At that width it cannot overflow, so it needs no clamp. V is int16 because the leak and the threshold subtraction bound it, and the clamp on writeback catches anything past that.
+**Because:** for int8 weights, the measured values of v and acc stay well inside int16 (across all three models max|acc| = 2,402, max|v| = 8,874, see docs/img for value distribution). Acc is int32 because it has to cover the worst case: 784*127 = 99568 in the hidden layer, which exceeds int16's 32767. At that width it cannot overflow, so it needs no clamp. V is int16 because the leak and the threshold subtraction bound it, and the clamp on writeback catches anything past that. The saturation clamps v>32767 to 32767 and v<-32768 to -32768 so that it doesn't wrap to the wrong signed values.
 
-The saturation clamps v>32767 to 32767 and v<-32768 to -32768 so that it doesn't wrap to the wrong signed values.
+Weights are int8 because LANES*8 fits one word perfectly, so the drain reads one word per lane group, and the accuracy measurements show that a bigger width would not benefit much.
 
 **Revisit if:** a re-measurement shows frequent clamping that rescaling weights can't fix, then widen v to `int32`. Experiment showed that clamping never triggered. Also worth revisiting with an int32 v once there is a Vivado setup, where the synthesis will reveal which one uses less hardware (int16 + clamp or int32 without clamp).
 
@@ -268,6 +268,42 @@ crosses threshold
 **Because:** For deferred reset, it needs additional hardware to carry the pending reset bit per neuron to the next timestep, and the accuracy for deferred reset isn't better than immediate reset.
 
 **Revisit if:** deferred reset trains materially better. Measured at h128 with the integer model: 97.02% deferred vs 97.63% immediate (float: 97.25% vs 97.59%), so there's no advantage. Will not be revisited.
+
+#### A6: QAT or PTQ for weight quantization
+**Chose:** Quantization-aware training (QAT)
+
+**Rejected:** Post-training quantization (PTQ)
+
+**Because:** QAT addresses the int8 rounding of the weights during training instead of after training ends. This creates a model that trains with what the hardware expected, and QAT generally has higher accuracy that PTQ. If the bit wdith of weights drop (due to limited memory for example), then QAT would be non-negotiable because the impact of the error from PTQ would grow.
+
+**Revisit if:** a network arrived already trained, then PTQ would be necessary.
+
+#### A7: Stateful or hash based random number generator for rate coding
+**Chose:** Stateless Thomas Wang's 32-bit integer hash
+
+**Rejected:** A stateful pseudo random number generator
+
+**Because:** The encoded image would be order independent, and every pixel would be accessible. Stateless generator makes sure that across the golden model and the core, nothing needs reimplementing the way a stateful generator would. Thomas Wang's hash is bijective so every hash output is uniform, and it does not need any multipliers. From this characteristic, it can recreate Bernoulli's rate coding on the core.
+
+**Revisit if:** the encoder stops running on the core, then the spikes can be streamed to the accelerator from pc without needing multiple implementations.
+
+#### A8: Where the spike encoder runs
+**Chose:** RISC-V core runs the encoder and writes spikes to accelerator through MMIO
+
+**Rejected:** The accelerator runs the encoder and the host writes raw pixels, laptop precomputes and writes spikes to accelerator via UART
+
+**Because:** The encoding was part of data preprocessing, therefore left out of accelerator design. Originally thought the encoding would take only a small portion of the cycles, experiment results proved that to be wrong: for h128 the accelerator spends 87% of its cycles waiting for the core to encode the next timestep.
+
+**Revisit if:** Encoding cycles dominate, which they do. Moving the encoder into the accelerator should recover these cycles. Will be revisited.
+
+#### A9: How the spike queue is written to the accelerator
+**Chose:** Event index list(in EV banks) plus a per-timestep length(EVA_LEN & EVB_LEN)
+
+**Rejected:** 784-bit bitmap that the accelerator scans with skipped zeros
+
+**Because:** The encoder of the core already loops through the pixels producing the event queue so passing it directly to event index list is free. A bitmap would need additional hardware in the accelerator to scan.
+
+**Revisit if:** storage becomes a constraint on the FPGA, then the bitmap would save more space(2 banks*784\*10 bits = 15680 bits for index list vs 2 banks\*25\*32 bits = 1600 bits for bitmap).
 
 ## 4. Verification
 

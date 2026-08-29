@@ -378,3 +378,9 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - created acc, v and weights distribution in docs/img to visualize and verify that they do not exceed their boundaries. (across all three models max|acc| = 2,402, max|v| = 8,874, so 3.7× headroom in int16)
 - trained deferred reset and got int accuracy of 0.9702 over the 0.9763 of immediate reset (float 0.9725 vs 0.9759, both from check_vs_float)
 - check vs float emits whatever the config it is currently in model.py so make sure model.py contains the correct config
+
+## 2026-08-28
+- stderr fprintf is for msgs, warnings and diagnostics while printf is stdout.
+- wrote accelerator decisions a6-a9 in DESIGN.md
+- added sim prediction output and stall vs working cycle count in soc runner. working: 12.9% at h128, 6.5% at h64, 3.3% at h32 → drain and sweep shrinks for less hidden neurons but encoding cycles doesnt.
+
