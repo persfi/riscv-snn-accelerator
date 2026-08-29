@@ -34,17 +34,40 @@ int main(int argc, char** argv) {
     dut.rst = 0;
     const uint64_t start = tb.cycle();
 
-    // Single-cycle core: print_sel/exit_sel are combinational decodes that hold
-    // for exactly one settled cycle per store, so sampling once per tick catches
-    // each MMIO write exactly once (same observe-after-tick shape the riscv-tests
-    // runner uses on the tohost word).
+    // PRIME0 is the only state that waits on the host: it holds until bank_ready
+    // says the next timestep's events have been written. 
+    enum { SEQ_PRIME0 = 1, SEQ_IDLE = 7 };
+    auto& seq_state = tb.top.rootp->soc__DOT__accel__DOT__sequencer__DOT__state;
+    uint64_t busy = 0, stalled = 0;
+
+    bool saw_int = false;
+    uint32_t last_int = 0;
+
     while (tb.cycle() < max_cycles) {
         tb.tick();
+        if (seq_state != SEQ_IDLE) {
+            if (seq_state == SEQ_PRIME0) stalled++;
+            else busy++;
+        }
         if (dut.print_sel) std::putchar((int)dut.print_data);
-        if (dut.print_int_sel) std::printf("%x\n", (unsigned)dut.print_int_data);
+        if (dut.print_int_sel) {
+            last_int = (uint32_t)dut.print_int_data;
+            saw_int = true;
+            std::printf("%x\n", (unsigned)last_int);
+        }
         if (dut.exit_sel) {
             const uint32_t code = dut.exit_code;
+            const uint64_t active = busy + stalled;
             std::fflush(stdout);
+            if (active)
+                std::fprintf(stderr,
+                             "[accel] busy=%llu stalled=%llu  busy=%.1f%%\n",
+                             (unsigned long long)busy,
+                             (unsigned long long)stalled,
+                             100.0 * (double)busy / (double)active);
+            if (saw_int)
+                std::fprintf(stderr, "[sim] prediction = %u\n",
+                             (unsigned)last_int);
             std::fprintf(stderr, "[sim] EXIT code=%u after %llu cycles\n",
                          code, (unsigned long long)(tb.cycle() - start));
             return (int)code;
