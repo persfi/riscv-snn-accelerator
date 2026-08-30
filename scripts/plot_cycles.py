@@ -34,7 +34,7 @@ w = 0.38
 
 
 def chart(left, right, left_label, right_label, title, path):
-    """Two bars per shape with the ratio annotated above the right one."""
+    """Two bars per shape, counts above each and the ratio inside the left."""
     fig, ax = plt.subplots(figsize=(6.0, 4.0))
     ax.bar(x - w / 2, left, w, color=CORE, label=left_label)
     ax.bar(x + w / 2, right, w, color=ACCEL, label=right_label)

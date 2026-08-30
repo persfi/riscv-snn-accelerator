@@ -10,7 +10,6 @@ NM      := $(CROSS_COMPILE)nm
 
 RTL_SOURCES := $(shell find rtl -name '*.v')
 
-
 shape      := h128
 k          := 2
 t          := 20

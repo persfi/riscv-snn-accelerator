@@ -384,3 +384,12 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - wrote accelerator decisions a6-a9 in DESIGN.md
 - added sim prediction output and stall vs working cycle count in soc runner. working: 12.9% at h128, 6.5% at h64, 3.3% at h32 → drain and sweep shrinks for less hidden neurons but encoding cycles doesnt.
 
+## 2026-08-29
+- write results in DESIGN.md and generated bar graphs for visualization
+- created mnist_core to run the inference purely on core to generate the exact cyc counts 
+- mnist_core needs state markers so that it can output how many cycs were ran for encode and eval stages.
+- updated the harness infra to run core only.
+- weights for core run are loaded into dmem with a widening dmem. dmem widened from passing flags to verilator since its depth is reachable through soc. imem still passes program.hex only but the exit error is changed to warning if it overflows. (if it overflows data, imem is still safe bc it only read instructions, thats why changed to warning)
+- linker_bench ld for moving stack top higher bc dmem expanded.
+- originally the order of the loop in mnist core wasn't the exacpt same as accel, and it adds cycs. changed it so that the comparison is fair.
+

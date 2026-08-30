@@ -7,7 +7,7 @@ This project demonstrates:
 1. A complete vertical stack of a SNN accelerator
     a. RISC-V RV32I core that passed the RISC-V official rv32ui test
     b. Trained 2 layer LIF SNN model with MNIST dataset (97.6% test accuracy) for image classification that produced the golden reference model for the inference accelerator.
-    c. Custom accelerator that processed testcases with 28x fewer cycles (75510 vs 2127999 cycles on core)
+    c. Custom accelerator that processed testcases with 28x fewer cycles (60457 vs 1713671 cycles on core)
     d. Thorough unit and datapath verification using C++, Assembly, and the golden reference model.
 2. Statically structured system with cycle counts dependent only on the input data.
     a. Every datapath is fixed, so no cycle has two possible next actions.
@@ -324,5 +324,41 @@ Run against the unmodified upstream rv32ui test bodies, via a CSR/trap-free envi
 | fence_i | Zifencei extension, not base RV32I, not needed for compliance. Split I and D memories (Harvard), so storing can never reach imem. |
 
 **Negative control:** Broke `add` (used everywhere, including boot) and all 40 tests failed; broke `or` and `xor` individually and only their own tests failed. Confirms the tohost signal detects real failures, not a rubber stamp.
+
+## 5. Results
+
+### Cycle counts
+
+Cycle counts are presented as a mean over MNIST test images 0-9.  Two types of comparisons are made.
+1. core(encode + network evaluation) vs core(encode) + accelerator(network evaluation) end to end
+2. core vs accelerator's network evaluation
+
+**1. End to end**, whole image in to prediction out.
+
+| hidden | core alone | core + accelerator | speedup |
+|---|---|---|---|
+| 32 | 852,602 | 403,483 | 2.1x |
+| 64 | 1,278,066 | 404,258 | 3.2x |
+| 128 | 2,120,792 | 405,776 | 5.2x |
+
+<small>End to end also includes crt0's .bss clear and the final argmax</small>
+
+
+**2. Network evaluation**, the architecture actually replaced by the accelerator. 
+
+*Accelerator busy%* is the percentage of the cycles that the accelerator is actually running the network evaluation and not stalled waiting for the core.
+
+| hidden | core's network evaluation | accelerator busy | speedup | accelerator busy% |
+|---|---|---|---|---|
+| 32 | 446,652 | 15,453 | 28.9x | 4.0% |
+| 64 | 871,712 | 30,583 | 28.5x | 8.0% |
+| 128 | 1,713,671 | 60,457 | 28.3x | 15.7% |
+
+<p>
+<img src="docs/img/cycles_end_to_end.png" width="49%" alt="End to end cycle counts">
+<img src="docs/img/cycles_eval.png" width="49%" alt="Network evaluation cycle counts">
+</p>
+
+
 
 

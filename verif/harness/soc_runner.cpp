@@ -53,9 +53,6 @@ int main(int argc, char** argv) {
     bool saw_int = false;
     uint32_t last_int = 0;
 
-    // Core-only benchmark:  0 opens
-    // the first encode, 1 closes an encode, 2 closes a network evaluation.
-    // Each marker closes the running phase and opens the next.
     enum { MARK_START = 0, MARK_ENCODE = 1, MARK_EVAL = 2 };
     uint64_t enc_cycles = 0, eval_cycles = 0, phase_start = 0;
     bool saw_mark = false;
