@@ -10,11 +10,14 @@ NM      := $(CROSS_COMPILE)nm
 
 RTL_SOURCES := $(shell find rtl -name '*.v')
 
-# SHAPE controls the which network to use across config to weight load
-SHAPE      := snn_h128_k2_T20
+
+shape      := h128
+k          := 2
+t          := 20
+run        ?= snn_$(shape)_k$(k)_T$(t)
 WEIGHT_DEFS = -DW1_INIT='"$(VEC_DIR)/w1.hex"' -DW2_INIT='"$(VEC_DIR)/w2.hex"'
-GOLDEN_RUN := model/training/runs/$(SHAPE)
-VEC_DIR    := verif/vectors/$(SHAPE)
+GOLDEN_RUN := model/training/runs/$(run)
+VEC_DIR    := verif/vectors/$(run)
 BUILD_DIR   := verif/build
 
 # --- riscv-tests (rv32ui) ---------------------------------------------------
@@ -28,7 +31,7 @@ SIM_DIR     := $(BUILD_DIR)/core-sim
 SIM         := $(SIM_DIR)/core_sim
 
 # --- bare-metal app runner --------------------------------------------------
-RUN_DIR     := $(BUILD_DIR)/soc-run-$(SHAPE)
+RUN_DIR     := $(BUILD_DIR)/soc-run-$(run)
 SOC_RUN     := $(RUN_DIR)/soc_run
 # Excluded, pre-committed (DESIGN.md): ma_data (misaligned, stricter than
 # the ISA mandates) and fence_i (Zifencei, meaningless on split memory).
@@ -111,6 +114,29 @@ $(SOC_RUN): $(SOC_RTL) verif/harness/soc_runner.cpp verif/harness/tb_harness.h
 		--Mdir $(RUN_DIR) -o soc_run \
 		$(SOC_RTL) verif/harness/soc_runner.cpp
 
+# --- core-only benchmark ------------------------------------------------------
+# The same SoC, verilated with a dmem big enough to hold the weights, so the
+# inference can run entirely in C for the cycle-count comparison. Simulation
+# only: the real SoC has 4 KB of dmem and cannot hold w1 at all.
+BENCH_DIR   := $(BUILD_DIR)/soc-bench-$(run)
+BENCH_RUN   := $(BENCH_DIR)/soc_bench
+BENCH_DEPTH := 32768
+BENCH_APP   := mnist_core
+BENCH_MAX   := 50000000
+
+$(BENCH_RUN): $(SOC_RTL) verif/harness/soc_runner.cpp verif/harness/tb_harness.h
+	@mkdir -p $(BENCH_DIR)
+	verilator --cc --exe --build -Wall --trace --top-module soc \
+		-Irtl/core -Irtl/accel $(WEIGHT_DEFS) -GDMEM_DEPTH=$(BENCH_DEPTH) \
+		-CFLAGS "-I$(CURDIR)/verif/harness -DW1_HEX='\"$(VEC_DIR)/w1.hex\"' \
+		         -DW2_HEX='\"$(VEC_DIR)/w2.hex\"'" \
+		--Mdir $(BENCH_DIR) -o soc_bench \
+		$(SOC_RTL) verif/harness/soc_runner.cpp
+
+bench: $(BENCH_RUN)
+	@$(MAKE) --no-print-directory sw-build APP=$(BENCH_APP) >/dev/null
+	$(BENCH_RUN) $(SW_DIR)/$(BENCH_APP).hex $(BENCH_MAX)
+
 # Run a prebuilt program hex on the SoC, e.g.
 #   make hex FILE=sw/apps/hello.S OUT=verif/build/hello.hex
 #   make run-hex HEX=verif/build/hello.hex
@@ -121,7 +147,7 @@ run-hex: $(SOC_RUN)
 # --- bare-metal apps (sw/apps + sw/bsp) -------------------------------------
 SW_DIR   := $(BUILD_DIR)/sw
 BSP      := sw/bsp
-LDSCRIPT := $(BSP)/linker.ld
+LDSCRIPT  = $(BSP)/$(if $(filter $(APP),$(BENCH_APP)),linker_bench.ld,linker.ld)
 CRT0     := $(BSP)/crt0.S
 # An app may be asm or C; take whichever exists.
 APP_SRC   = $(firstword $(wildcard sw/apps/$(APP).S sw/apps/$(APP).c))
@@ -130,8 +156,12 @@ LIBSNN    := $(wildcard sw/libsnn/*.c)
 # Build crt0 + the app against the bsp, then flatten to $readmemh hex.
 # -lgcc goes last: -nostdlib omits it, but C multiply/divide lower to libgcc
 # helpers (__mulsi3, __divsi3), which are plain RV32I and run on the core.
+# img=<n> rewrites sw/libsnn/image.h for that test image first, so `make bench
+# img=3` and `make app-mnist img=3` run the same input. Omitted, image.h is left
+# alone (test-system drives gen_image_h.py itself).
 sw-build: netcfg
 	@test -n "$(APP)" || (echo "usage: make sw-build APP=<name>  (sw/apps/<name>.S or .c)"; exit 1)
+	@$(if $(img),python3 scripts/gen_image_h.py $(img) >/dev/null)
 	@test -n "$(APP_SRC)" || (echo "no sw/apps/$(APP).S or sw/apps/$(APP).c"; exit 1)
 	@mkdir -p $(SW_DIR)
 	$(CC) $(ARCH_FLAGS) -O1 -nostdlib -nostartfiles -I$(BSP) \
@@ -246,6 +276,7 @@ test-system: $(SOC_RUN)
 # `make u-accel`      instead of  `make test-unit BLOCK=accel`
 # `make app-hello`    instead of  `make sw-app APP=hello`
 # `make dump-hello`   instead of  `make sw-dump APP=hello`
+# `make bench-3`      instead of  `make bench img=3`
 u-%:
 	@$(MAKE) --no-print-directory test-unit BLOCK=$*
 
@@ -254,6 +285,9 @@ app-%:
 
 dump-%:
 	@$(MAKE) --no-print-directory sw-dump APP=$*
+
+bench-%:
+	@$(MAKE) --no-print-directory bench img=$*
 
 # every unit suite, then the riscv-tests suite;
 UNIT_BLOCKS := $(sort $(notdir $(wildcard verif/unit/*)))
@@ -275,5 +309,5 @@ check:
 	test $$st -eq 0 || rc=1; \
 	exit $$rc
 
-.PHONY: netcfg test-encode test-system freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one check
+.PHONY: bench netcfg test-encode test-system freeze clean lint test-unit dump-asm hex run-hex sw-build sw-dump sw-app test-core test-core-one check
 

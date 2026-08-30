@@ -119,7 +119,7 @@ void load_hex(Mem& mem, const char* path, size_t depth) {
         std::fprintf(stderr, "load_hex: cannot open %s\n", path);
         std::exit(1);
     }
-    size_t index = 0;
+    size_t index = 0, skipped = 0;
     std::string line;
     while (std::getline(in, line)) {
         auto comment = line.find("//");
@@ -131,9 +131,38 @@ void load_hex(Mem& mem, const char* path, size_t depth) {
                 index = std::strtoul(tok.c_str() + 1, nullptr, 16);
                 continue;
             }
+            // Not fatal: imem only fetches .text at the low addresses, so a program whose
+            // .rodata runs past DEPTH still boots. Report the count anyway, since a .text
+            // that genuinely overflowed looks identical from here.
+            if (index >= depth) { skipped++; continue; }
+            mem[index++] = static_cast<uint32_t>(std::strtoul(tok.c_str(), nullptr, 16));
+        }
+    }
+    if (skipped)
+        std::fprintf(stderr, "load_hex: %s truncated to depth=%zu (%zu words dropped)\n",
+                     path, depth, skipped);
+}
+
+// Load a hex into mem starting at a given word offset
+template <typename Mem>
+void load_hex_at(Mem& mem, const char* path, size_t word_offset, size_t depth) {
+    std::ifstream in(path);
+    if (!in) {
+        std::fprintf(stderr, "load_hex_at: cannot open %s\n", path);
+        std::exit(1);
+    }
+    size_t index = word_offset;
+    std::string line;
+    while (std::getline(in, line)) {
+        auto comment = line.find("//");
+        if (comment != std::string::npos) line.resize(comment);
+        std::istringstream iss(line);
+        std::string tok;
+        while (iss >> tok) {
             if (index >= depth) {
-                std::fprintf(stderr, "load_hex: %s has more words than depth=%zu\n",
-                              path, depth);
+                std::fprintf(stderr,
+                             "load_hex_at: %s does not fit at word %zu in depth=%zu\n",
+                             path, word_offset, depth);
                 std::exit(1);
             }
             mem[index++] = static_cast<uint32_t>(std::strtoul(tok.c_str(), nullptr, 16));

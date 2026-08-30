@@ -27,6 +27,16 @@ int main(int argc, char** argv) {
     load_hex(imem, hex_path, idepth);
     load_hex(dmem, hex_path, ddepth);
 
+    // Core-only benchmark: the weights are far too big for the program image, so
+    // the harness drops them straight into dmem at the addresses mnist_core.c
+    // reads. 
+#ifdef W1_HEX
+    load_hex_at(dmem, W1_HEX, 0x4000 / 4, ddepth);
+#endif
+#ifdef W2_HEX
+    load_hex_at(dmem, W2_HEX, 0x1D000 / 4, ddepth);
+#endif
+
     // Reset one cycle, then release. The computation baseline is measured from
     // release, so snapshot the cycle count there.
     dut.rst = 1;
@@ -43,13 +53,31 @@ int main(int argc, char** argv) {
     bool saw_int = false;
     uint32_t last_int = 0;
 
+    // Core-only benchmark:  0 opens
+    // the first encode, 1 closes an encode, 2 closes a network evaluation.
+    // Each marker closes the running phase and opens the next.
+    enum { MARK_START = 0, MARK_ENCODE = 1, MARK_EVAL = 2 };
+    uint64_t enc_cycles = 0, eval_cycles = 0, phase_start = 0;
+    bool saw_mark = false;
+
     while (tb.cycle() < max_cycles) {
         tb.tick();
         if (seq_state != SEQ_IDLE) {
             if (seq_state == SEQ_PRIME0) stalled++;
             else busy++;
         }
-        if (dut.print_sel) std::putchar((int)dut.print_data);
+        if (dut.print_sel) {
+            const uint8_t c = (uint8_t)dut.print_data;
+            if (c <= MARK_EVAL) {
+                const uint64_t now = tb.cycle();
+                if (c == MARK_ENCODE) enc_cycles += now - phase_start;
+                else if (c == MARK_EVAL) eval_cycles += now - phase_start;
+                phase_start = now;
+                saw_mark = true;
+            } else {
+                std::putchar((int)c);
+            }
+        }
         if (dut.print_int_sel) {
             last_int = (uint32_t)dut.print_int_data;
             saw_int = true;
@@ -65,6 +93,13 @@ int main(int argc, char** argv) {
                              (unsigned long long)busy,
                              (unsigned long long)stalled,
                              100.0 * (double)busy / (double)active);
+            if (saw_mark)
+                std::fprintf(stderr,
+                             "[phase] encode=%llu eval=%llu  eval=%.1f%%\n",
+                             (unsigned long long)enc_cycles,
+                             (unsigned long long)eval_cycles,
+                             100.0 * (double)eval_cycles /
+                                 (double)(enc_cycles + eval_cycles));
             if (saw_int)
                 std::fprintf(stderr, "[sim] prediction = %u\n",
                              (unsigned)last_int);
