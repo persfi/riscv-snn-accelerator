@@ -8,7 +8,7 @@ module spk1 (
     output [6:0] rd_data
 );
 
-    reg [6:0] mem [0:127]; //max 128 -> 7 bits
+    reg [6:0] mem [0:127] /* verilator public_flat_rd */; //max 128 -> 7 bits
 
     always @(posedge clk) begin
         if(we) begin

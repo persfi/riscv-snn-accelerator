@@ -15,7 +15,7 @@ module v_mem (
     `include "accel_defs.vh"
     /* verilator lint_on UNUSEDPARAM */
 
-    reg [15:0] v [0:139];
+    reg [15:0] v [0:139] /* verilator public_flat_rd */;
     wire [31:0] base = layer_state ? 32'd128 : 32'd0;
     integer i;
 

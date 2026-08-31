@@ -40,7 +40,7 @@ module sequencer (
     localparam [2:0] SWEEP1 = 3'd6;
     localparam [2:0] IDLE = 3'd7;
 
-    reg [2:0] state;
+    reg [2:0] state /* verilator public_flat_rd */;
     wire [4:0] t;
     wire [9:0] ev_len;
     reg [9:0] ev_idx_q;
@@ -187,7 +187,7 @@ module sequencer (
     end
 
     reg [3:0] pending;
-    reg [6:0] spk1_wr_ptr;
+    reg [6:0] spk1_wr_ptr /* verilator public_flat_rd */;
     wire word_cnt_stall;
     wire [1:0] lane;
     assign word_cnt_stall = pending != 4'b0 || (state==PRIME0 && !bank_ready);

@@ -13,7 +13,7 @@ module w_mem #(
     `include "accel_defs.vh"
     /* verilator lint_on UNUSEDPARAM */
 
-    reg [WEIGHT_WIDTH-1:0] mem [0:DEPTH-1];  
+    reg [WEIGHT_WIDTH-1:0] mem [0:DEPTH-1] /* verilator public_flat_rd */;  
     initial if (INIT_FILE != "") $readmemh(INIT_FILE, mem);
 
     always @(posedge clk) begin

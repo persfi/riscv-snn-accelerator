@@ -14,7 +14,7 @@ module acc_mem #(
     /* verilator lint_on UNUSEDPARAM */
 
     integer i;
-    reg [31:0] mem [0:DEPTH-1];
+    reg [31:0] mem [0:DEPTH-1] /* verilator public_flat_rd */;
     always @(posedge clk) begin
 
         if(ctrl == ACC_WRITE) begin

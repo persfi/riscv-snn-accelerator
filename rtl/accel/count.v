@@ -13,7 +13,7 @@ module count (
     /* verilator lint_on UNUSEDPARAM */
 
 
-    reg [7:0] mem [0:11]; //match count.hex
+    reg [7:0] mem [0:11] /* verilator public_flat_rd */; //match count.hex
 
     integer i;
     always @(posedge clk) begin

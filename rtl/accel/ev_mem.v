@@ -10,8 +10,8 @@ module ev_mem (
     output reg [9:0] rd_data
 );
 
-    reg [9:0] memA [0:783];
-    reg [9:0] memB [0:783];
+    reg [9:0] memA [0:783] /* verilator public_flat_rd */;
+    reg [9:0] memB [0:783] /* verilator public_flat_rd */;
 
     always @(posedge clk) begin
         if(wr_bank==0 && we) memA[wr_addr] <= wr_data;
