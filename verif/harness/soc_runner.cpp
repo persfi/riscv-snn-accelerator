@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 int main(int argc, char** argv) {
     if (argc < 2) {
@@ -13,7 +14,13 @@ int main(int argc, char** argv) {
     }
     const char* hex_path = argv[1];
     const uint64_t max_cycles =
-        (argc > 2) ? std::strtoull(argv[2], nullptr, 0) : 3000000;
+        (argc > 2 && argv[2][0] != '-') ? std::strtoull(argv[2], nullptr, 0)
+                                        : 3000000;
+
+    // --dump-events: sw/apps/encode.c fills event bank A with the indices that fired, then writes the count of them to PRINT_INT. With this flag each count is followed by that many entries of bank A, so stdout carries both ev_len and ev_idx.
+    bool dump_events = false;
+    for (int i = 1; i < argc; i++)
+        if (std::strcmp(argv[i], "--dump-events") == 0) dump_events = true;
 
     Testbench<Vsoc> tb("verif/build/soc-run/run.vcd");
     auto& dut  = tb.top;
@@ -79,6 +86,12 @@ int main(int argc, char** argv) {
             last_int = (uint32_t)dut.print_int_data;
             saw_int = true;
             std::printf("%x\n", (unsigned)last_int);
+            if (dump_events) {
+                auto& evA =
+                    tb.top.rootp->soc__DOT__accel__DOT__ev_mem__DOT__memA;
+                for (uint32_t i = 0; i < last_int; i++)
+                    std::printf("%x\n", (unsigned)evA[i]);
+            }
         }
         if (dut.exit_sel) {
             const uint32_t code = dut.exit_code;

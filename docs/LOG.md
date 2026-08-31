@@ -393,3 +393,10 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - linker_bench ld for moving stack top higher bc dmem expanded.
 - originally the order of the loop in mnist core wasn't the exacpt same as accel, and it adds cycs. changed it so that the comparison is fair.
 
+## 2026-08-30
+- wrote section4 verification for accelerator in DESIGN.md
+- s_in.hex was just exported along the others but its not used to verify or input anything so dropped it from the output
+- added spk2 check in accel_tb. thats checked by the difference in coutns every timestep. all tests passed.
+- test encode only ran one img at a time → added a loop to makefile to run all 10 imgs and compare against evidx and evlen instead of just evlen
+- tbs were able to read rtl mems because of --trace. added  verilator public_flat_rd to all of the read mems in rtl
+- changed makefile so now make check runs over all shapes instead of just h128.

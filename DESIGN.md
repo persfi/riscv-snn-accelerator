@@ -4,12 +4,12 @@
 This is an RTL design project that creates from scratch a RISC-V RV32I CPU and a two layer LIF SNN (Leaky Integrate and Fire Spiking Neuron Network) accelerator built as a peripheral of the CPU core.
 
 This project demonstrates:
-1. A complete vertical stack of a SNN accelerator
-    a. RISC-V RV32I core that passed the RISC-V official rv32ui test
-    b. Trained 2 layer LIF SNN model with MNIST dataset (97.6% test accuracy) for image classification that produced the golden reference model for the inference accelerator.
-    c. Custom accelerator that processed testcases with 28x fewer cycles (60457 vs 1713671 cycles on core)
+1. A complete vertical stack of a SNN accelerator<br>
+    a. RISC-V RV32I core that passed the RISC-V official rv32ui test<br>
+    b. Trained 2 layer LIF SNN model with MNIST dataset (97.6% test accuracy) for image classification that produced the golden reference model for the inference accelerator.<br>
+    c. Custom accelerator that processed testcases with 28x fewer cycles (60457 vs 1713671 cycles on core)<br>
     d. Thorough unit and datapath verification using C++, Assembly, and the golden reference model.
-2. Statically structured system with cycle counts dependent only on the input data.
+2. Statically structured system with cycle counts dependent only on the input data.<br>
     a. Every datapath is fixed, so no cycle has two possible next actions.
 
 ## 2. System Architecture
@@ -171,7 +171,9 @@ Consider DE1-SoC for September target, to demonstrate vendor portability.
 | D7 | Base ISA or extensions | RV32I only | RV32IM, RV32IMC, custom ISA | Smallest core without multipliers |
 | D8 | Where branch comparison lives | Dedicated comparator (branch.v) | Route through the ALU | Costs little hardware and doesn't need translation logic |
 
-#### D3: How to obtain a CPU host
+<details>
+<summary>D3: How to obtain a CPU host</summary>
+
 **Chose:** Write RV32I core from scratch.
 
 **Rejected:** PicoRV32/FemtoRV as host.
@@ -180,7 +182,11 @@ Consider DE1-SoC for September target, to demonstrate vendor portability.
 
 **Revisit if:** Core verification wasn't complete by late July, then swap in PicoRV32 and the accelerator will be the entire project. Since core verification was completed, there will be no revisits.
 
-#### D6: Single-cycle or pipelined host
+</details>
+
+<details>
+<summary>D6: Single-cycle or pipelined host</summary>
+
 **Chose:** Single-cycle.
 
 **Rejected:** 5-stage pipeline.
@@ -189,7 +195,11 @@ Consider DE1-SoC for September target, to demonstrate vendor portability.
 
 **Revisit if:** The metric changes from cycle count to the actual time speed on the FPGA.
 
-#### D7: Base ISA or extensions
+</details>
+
+<details>
+<summary>D7: Base ISA or extensions</summary>
+
 **Chose:** RV32I only (-march=rv32i -mabi=ilp32).
 
 **Rejected:** RV32IM, RV32IMC, custom ISA.
@@ -206,7 +216,11 @@ Consider DE1-SoC for September target, to demonstrate vendor portability.
 
 **Revisit if:** Multiply turns out to be a bottleneck in the future, then M would be added first.
 
-#### D8: Where branch comparison lives
+</details>
+
+<details>
+<summary>D8: Where branch comparison lives</summary>
+
 **Chose:** Dedicated comparator module (branch.v) beside the ALU; ALU idle during branches.
 
 **Rejected:** Routing comparison through the ALU (textbook structure).
@@ -215,10 +229,13 @@ Consider DE1-SoC for September target, to demonstrate vendor portability.
 
 **Revisit if:** The core is pipelined.
 
+</details>
 
 ### 3.3 Accelerator
 
-#### A1: What type of input encoding to use
+<details>
+<summary>A1: What type of input encoding to use</summary>
+
 **Chose:** Rate coding
 
 **Rejected:** Latency (temporal) coding
@@ -227,7 +244,11 @@ Consider DE1-SoC for September target, to demonstrate vendor portability.
 
 **Revisit if:** Input becomes dependent on spike timing. A static MNIST image is not.
 
-#### A2: What is the reset policy
+</details>
+
+<details>
+<summary>A2: What is the reset policy</summary>
+
 **Chose:** membrane potential subtract threshold (soft reset)
 
 **Rejected:** membrane potential reset to zero (hard reset)
@@ -236,7 +257,11 @@ Consider DE1-SoC for September target, to demonstrate vendor portability.
 
 **Revisit if:** Membrane potential (v) is driven into saturation (the int16 width limit) often enough to distort the results.
 
-#### A3: How to leak membrane potential in hardware
+</details>
+
+<details>
+<summary>A3: How to leak membrane potential in hardware</summary>
+
 **Chose:** multiplicative leak `V *= β` implemented as one arithmetic shift-subtract,
 `V -= V>>k`, which equals `V*(1 - 2^-k)`. So `β = 1 - 2^-k`.
 (k=1→0.5, k=2→0.75, k=3→0.875, k=4→0.9375, k=5→0.96875)
@@ -247,7 +272,11 @@ Consider DE1-SoC for September target, to demonstrate vendor portability.
 
 **Revisit if:** none of k=1..5 trains acceptably. All five did, so k=2 was chosen and will not be revisited.
 
-#### A4: What number formats and accumulator width to use
+</details>
+
+<details>
+<summary>A4: What number formats and accumulator width to use</summary>
+
 **Chose:** weights `int8`, membrane v `int16`, accumulate arriving weights (acc) in an
 `int32` register, then saturate (clamp) to int16 on writeback to v.
 
@@ -259,7 +288,11 @@ Weights are int8 because LANES*8 fits one word perfectly, so the drain reads one
 
 **Revisit if:** a re-measurement shows frequent clamping that rescaling weights can't fix, then widen v to `int32`. Experiment showed that clamping never triggered. Also worth revisiting with an int32 v once there is a Vivado setup, where the synthesis will reveal which one uses less hardware (int16 + clamp or int32 without clamp).
 
-#### A5: Immediate or deferred reset timing
+</details>
+
+<details>
+<summary>A5: Immediate or deferred reset timing</summary>
+
 **Chose:** Immediate reset. On fire, subtract `V_th` on the same timestep the neuron
 crosses threshold
 
@@ -269,7 +302,11 @@ crosses threshold
 
 **Revisit if:** deferred reset trains materially better. Measured at h128 with the integer model: 97.02% deferred vs 97.63% immediate (float: 97.25% vs 97.59%), so there's no advantage. Will not be revisited.
 
-#### A6: QAT or PTQ for weight quantization
+</details>
+
+<details>
+<summary>A6: QAT or PTQ for weight quantization</summary>
+
 **Chose:** Quantization-aware training (QAT)
 
 **Rejected:** Post-training quantization (PTQ)
@@ -278,7 +315,11 @@ crosses threshold
 
 **Revisit if:** a network arrived already trained, then PTQ would be necessary.
 
-#### A7: Stateful or hash based random number generator for rate coding
+</details>
+
+<details>
+<summary>A7: Stateful or hash based random number generator for rate coding</summary>
+
 **Chose:** Stateless Thomas Wang's 32-bit integer hash
 
 **Rejected:** A stateful pseudo random number generator
@@ -287,7 +328,11 @@ crosses threshold
 
 **Revisit if:** the encoder stops running on the core, then the spikes can be streamed to the accelerator from pc without needing multiple implementations.
 
-#### A8: Where the spike encoder runs
+</details>
+
+<details>
+<summary>A8: Where the spike encoder runs</summary>
+
 **Chose:** RISC-V core runs the encoder and writes spikes to accelerator through MMIO
 
 **Rejected:** The accelerator runs the encoder and the host writes raw pixels, laptop precomputes and writes spikes to accelerator via UART
@@ -296,7 +341,11 @@ crosses threshold
 
 **Revisit if:** Encoding cycles dominate, which they do. Moving the encoder into the accelerator should recover these cycles. Will be revisited.
 
-#### A9: How the spike queue is written to the accelerator
+</details>
+
+<details>
+<summary>A9: How the spike queue is written to the accelerator</summary>
+
 **Chose:** Event index list(in EV banks) plus a per-timestep length(EVA_LEN & EVB_LEN)
 
 **Rejected:** 784-bit bitmap that the accelerator scans with skipped zeros
@@ -305,7 +354,53 @@ crosses threshold
 
 **Revisit if:** storage becomes a constraint on the FPGA, then the bitmap would save more space(2 banks*784\*10 bits = 15680 bits for index list vs 2 banks\*25\*32 bits = 1600 bits for bitmap).
 
+</details>
+
 ## 4. Verification
+
+### Methodology
+
+Both the core and the accelerator get per-block unit testbenches in `verif/unit/` first, testing the functionality of each RTL module on its own. For final verification the core uses the official riscv-tests rv32ui suite while the accelerator verifies against the golden reference model.
+
+For simpler debugging, setting the TRACE environment variable (`TRACE=1 make u-accel`) prints the chosen values every cycle.
+
+The golden reference model in `model/golden/` is the correct answer the accelerator verifies against. It is a bit-exact Python model that produces the values at every step using the same arithmetic the accelerator uses (arithmetic shift, saturation bounds etc). Its outputs, and the inputs they were computed from, are stored in `verif/vectors/` as 15 files.
+
+### Vectors
+
+`make vectors` runs `model/golden/export_vectors.py` over a trained run and writes the set into `verif/vectors/<run>/`.
+
+| file | contents | role |
+|---|---|---|
+| ev_idx.hex, ev_len.hex | firing input indices, event count per timestep | stimulus for accel_tb, which writes them into the event banks; also the reference for the encoder check below |
+| w1.hex, w2.hex | int8 weights, packed into the weight memory's word layout | stimulus. accel_tb writes them over the bus, the SoC preloads them with $readmemh |
+| images.hex | the raw MNIST pixels of all ten images in the set | stimulus for the C app. The image the app is classifying has to be compiled to C array by: `scripts/gen_image_h.py` → `sw/libsnn/image.h` |
+| manifest.json | layer sizes, thresholds, k, T | configuration, read by accel_tb |
+| acc1.hex, acc2.hex | per neuron accumulators after each drain | compared by accel_tb |
+| v1.hex, v2.hex | membrane potentials after each sweep | compared by accel_tb |
+| spk1.hex | layer 1 spikes | compared by accel_tb and sequencer_tb |
+| counts.hex | per class spike totals over T | compared by accel_tb and test-system |
+| pred.hex | argmax of counts | compared by test-system |
+| spk2.hex | layer 2 spikes | compared by accel_tb (by change in the output counters) |
+| labels.hex | MNIST ground truth | not consumed|
+
+### Rate encoder
+
+The encoder exists twice: `spikes_at()` in NumPy for the golden reference model, and `encode_timestep()` in C for the core, both built on the same Thomas Wang hash keyed by image, timestep and pixel. 
+
+If the two disagree the accelerator is fed different spikes than the golden reference model, so `make test-encode` builds `sw/apps/encode.c`, runs it on the SoC and compares, per timestep, the event count against `ev_len.hex` and the event indices against `ev_idx.hex`, both emitted from export_vectors for the `spikes_at()` encode.
+
+| Metric | Value |
+|---|---|
+| Images checked | 10 |
+| Timesteps per image | 20 |
+| Event counts compared (ev_len) | 200 |
+| Firing indices compared (ev_idx) | 18,030 |
+| Mismatches | 0 |
+
+The 10 encoded images are identical for h32, h64, and h128 input.
+
+**Negative control:** Changed the encoder's threshold test from `<` to `<=` and all 10 images failed; reverting restored 10/10.
 
 ### RISC-V core: riscv-tests results
 
@@ -324,6 +419,55 @@ Run against the unmodified upstream rv32ui test bodies, via a CSR/trap-free envi
 | fence_i | Zifencei extension, not base RV32I, not needed for compliance. Split I and D memories (Harvard), so storing can never reach imem. |
 
 **Negative control:** Broke `add` (used everywhere, including boot) and all 40 tests failed; broke `or` and `xor` individually and only their own tests failed. Confirms the tohost signal detects real failures, not a rubber stamp.
+
+### Unit testbenches: accelerator and core
+
+23 directed C++ testbenches for RTL blocks.
+`make check` runs all of them, then lint, then the riscv-tests.
+
+| accelerator block | checks | | core block | checks |
+|---|---|---|---|---|
+| accel | 62,861 | | core | 98 |
+| sequencer | 1,113 | | alu | 30 |
+| count | 22 | | load_ext | 22 |
+| lif_unit | 19 | | imm_gen | 16 |
+| v_mem | 15 | | branch | 15 |
+| acc_mem | 11 | | wstrb_gen | 14 |
+| ev_mem | 8 | | regfile | 8 |
+| w_mem | 8 | | pc | 6 |
+| counter | 8 | | imem | 6 |
+| spk1 | 6 | | dmem | 6 |
+| weight_mem | 5 | | | |
+| addr_gen | 4 | | | |
+| drain | 4 | | | |
+
+**Negative control:** Corrupted one 32-bit word of w1 line 6467, only 62757/62861 tests passed; restoring it returned 62861/62861. Confirms the comparison detects a wrong weight.
+
+### System-level tests
+
+`make test-system` compiles `sw/apps/mnist.c` with `riscv64-unknown-elf-gcc -march=rv32i -mabi=ilp32` and runs it on the core, which encodes the spikes, writes them over the bus and reads the counts back through MMIO. 
+
+| Metric | Value |
+|---|---|
+| Shapes | 3 (h32, h64, h128) |
+| Images per shape | 10 |
+| Class counts compared | 300 |
+| Argmaxes compared | 30 |
+| Mismatches | 0 |
+
+The unit testbenches prove each block's functions, these system-level tests prove they are wired together and the driver uses them correctly. 
+
+### Network shapes 
+
+The same RTL runs 784-32-10, 784-64-10 and 784-128-10 model shapes. In order to do so, the hidden size is written at runtime.
+
+| hidden | accelerator checks (accel_tb) | float accuracy (over 10k test images) | integer accuracy (over 10k test images)|
+|---|---|---|---|
+| 32 | 21331 / 21331 | 95.83% | 95.74% |
+| 64 | 35495 / 35495 | 96.94% | 96.95% |
+| 128 | 62861 / 62861 | 97.59% | 97.63% |
+
+Integer accuracy is run by the golden model while the float accuracy is the original trained model without the hardware shift leak and scaled integer threshold. 
 
 ## 5. Results
 
@@ -348,11 +492,11 @@ Cycle counts are presented as a mean over MNIST test images 0-9.  Two types of c
 
 *Accelerator busy%* is the percentage of the cycles that the accelerator is actually running the network evaluation and not stalled waiting for the core.
 
-| hidden | core's network evaluation | accelerator busy | speedup | accelerator busy% |
+| hidden | core's network evaluation | accelerator busy | accelerator busy% | speedup |
 |---|---|---|---|---|
-| 32 | 446,652 | 15,453 | 28.9x | 4.0% |
-| 64 | 871,712 | 30,583 | 28.5x | 8.0% |
-| 128 | 1,713,671 | 60,457 | 28.3x | 15.7% |
+| 32 | 446,652 | 15,453 | 4.0% | 28.9x |
+| 64 | 871,712 | 30,583 | 8.0% | 28.5x |
+| 128 | 1,713,671 | 60,457 | 15.7% | 28.3x |
 
 <p>
 <img src="docs/img/cycles_end_to_end.png" width="49%" alt="End to end cycle counts">

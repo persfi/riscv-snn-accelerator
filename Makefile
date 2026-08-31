@@ -78,7 +78,7 @@ test-unit:
 		--Mdir $(BUILD_DIR)/$(BLOCK) \
 		-o $(BLOCK)_tb \
 		$(RTL_INPUTS) verif/unit/$(BLOCK)/$(BLOCK)_tb.cpp
-	$(BUILD_DIR)/$(BLOCK)/$(BLOCK)_tb $(ARGS)
+	$(BUILD_DIR)/$(BLOCK)/$(BLOCK)_tb $(if $(ARGS),$(ARGS),$(if $(filter accel,$(BLOCK)),$(VEC_DIR)))
 
 dump-asm:
 	@test -n "$(FILE)" || (echo "usage: make dump-asm FILE=<path-to.s>"; exit 1)
@@ -212,24 +212,35 @@ test-core: $(SIM) $(addprefix $(TB_DIR)/,$(addsuffix .hex,$(RV32UI)))
 
 # --- encoder check ------------------------------------------------------------
 
-ENC_APP := encode
-ENC_MAX := 5000000
+ENC_APP    := encode
+ENC_MAX    := 5000000
+ENC_IMAGES := 10
 
-test-encode:
-	@$(MAKE) --no-print-directory sw-build APP=$(ENC_APP) >/dev/null
-	@$(MAKE) --no-print-directory $(SOC_RUN) >/dev/null 2>&1
-	@img=$$(sed -n 's/^#define IMAGE_INDEX *\([0-9]*\).*/\1/p' sw/libsnn/image.h); \
-	$(SOC_RUN) $(SW_DIR)/$(ENC_APP).hex $(ENC_MAX) 2>/dev/null \
-		| grep -v '^%' > $(BUILD_DIR)/enc.got; \
-	grep -v '^//' $(VEC_DIR)/ev_len.hex | sed -n "$$((img*20+1)),$$((img*20+20))p" \
-		| sed 's/^0*//' > $(BUILD_DIR)/enc.want; \
-	if diff -u $(BUILD_DIR)/enc.want $(BUILD_DIR)/enc.got > $(BUILD_DIR)/enc.diff; then \
-		echo "encoder: image $$img, 20/20 timestep counts match golden"; \
-	else \
-		echo "encoder: MISMATCH on image $$img  (want | got)"; \
-		paste $(BUILD_DIR)/enc.want $(BUILD_DIR)/enc.got | cat -n; \
-		exit 1; \
-	fi
+test-encode: $(SOC_RUN)
+	@mkdir -p $(BUILD_DIR)
+	@cp sw/libsnn/image.h $(BUILD_DIR)/image.h.bak
+	@python3 -c "import itertools; L=[int(x,16) for x in open('$(VEC_DIR)/ev_len.hex') if x[0]!='/']; I=[x.strip().lstrip('0') or '0' for x in open('$(VEC_DIR)/ev_idx.hex') if x[0]!='/']; o=[0]+list(itertools.accumulate(L)); [open('$(BUILD_DIR)/enc.want.%d'%i,'w').write(''.join('%x\n'%L[s]+''.join(v+'\n' for v in I[o[s]:o[s+1]]) for s in range(i*20,i*20+20))) for i in range($(ENC_IMAGES))]"
+	@pass=0; fail=0; \
+	for i in $$(seq 0 $$(($(ENC_IMAGES)-1))); do \
+		python3 scripts/gen_image_h.py $$i >/dev/null; \
+		if ! out=`$(MAKE) --no-print-directory sw-build APP=$(ENC_APP) 2>&1`; then \
+			printf "  \033[31mFAIL\033[0m image %d: sw-build failed\n" $$i; \
+			echo "$$out" | grep -m3 -i error; fail=$$((fail+1)); continue; \
+		fi; \
+		$(SOC_RUN) $(SW_DIR)/$(ENC_APP).hex $(ENC_MAX) --dump-events 2>/dev/null \
+			| grep -v '^%' > $(BUILD_DIR)/enc.got; \
+		if diff -q $(BUILD_DIR)/enc.want.$$i $(BUILD_DIR)/enc.got >/dev/null; then \
+			printf "  \033[32mPASS\033[0m image %d\n" $$i; pass=$$((pass+1)); \
+		else \
+			printf "  \033[31mFAIL\033[0m image %d  (want | got, count then indices)\n" $$i; \
+			diff $(BUILD_DIR)/enc.want.$$i $(BUILD_DIR)/enc.got | head -20; \
+			fail=$$((fail+1)); \
+		fi; \
+	done; \
+	cp $(BUILD_DIR)/image.h.bak sw/libsnn/image.h; \
+	echo "-----"; \
+	echo "encoder[$(run)]: $$pass/$(ENC_IMAGES) images match the golden counts and firing indices"; \
+	test $$fail -eq 0
 
 # --- full system check --------------------------------------------------------
 # The C app on the core drives the accelerator over the bus; per-class spike
@@ -268,7 +279,7 @@ test-system: $(SOC_RUN)
 	cp $(BUILD_DIR)/image.h.bak sw/libsnn/image.h; \
 	test -f $(BUILD_DIR)/netcfg.h.bak && cp $(BUILD_DIR)/netcfg.h.bak sw/libsnn/netcfg.h; \
 	echo "-----"; \
-	echo "system: $$pass/$(SYS_IMAGES) images match golden counts and argmax"; \
+	echo "system[$(run)]: $$pass/$(SYS_IMAGES) images match golden counts and argmax"; \
 	test $$fail -eq 0
 
 # --- shortcuts ---------------------------------------------------------------
@@ -290,11 +301,16 @@ bench-%:
 
 # every unit suite, then the riscv-tests suite;
 UNIT_BLOCKS := $(sort $(notdir $(wildcard verif/unit/*)))
+
+SHAPES      := h32 h64 h128
+UNIT_RUNS   := $(filter-out accel,$(UNIT_BLOCKS)) $(addprefix accel:,$(SHAPES))
 check:
 	@rc=0; \
-	for b in $(UNIT_BLOCKS); do \
-		printf '%-12s' "$$b"; \
-		out=`$(MAKE) --no-print-directory test-unit BLOCK=$$b 2>&1`; st=$$?; \
+	for item in $(UNIT_RUNS); do \
+		b=$${item%%:*}; s=$${item#*:}; \
+		test "$$s" != "$$item" || s=""; \
+		printf '%-12s' "$$item"; \
+		out=`$(MAKE) --no-print-directory test-unit BLOCK=$$b $${s:+shape=$$s} 2>&1`; st=$$?; \
 		line=`echo "$$out" | grep 'checks passed' | tail -1`; \
 		test -n "$$line" || line=`echo "$$out" | tail -1`; \
 		echo "$$line"; \
