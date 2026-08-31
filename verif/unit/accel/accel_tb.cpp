@@ -58,7 +58,7 @@ enum {
 };
 
 static std::vector<uint32_t> w1, w2, ev_idx, ev_len, acc1, v1, spk1g, acc2, v2,
-    counts;
+    spk2g, counts;
 static std::vector<size_t>
     ev_start;  // where each (image,timestep) begins in ev_idx
 static bool saw_image_done = false;
@@ -229,6 +229,10 @@ static bool run_image(Testbench<Vaccel>& tb, int img) {
     for (size_t i = 0; i < gold_q.size(); i++)
       CHECK_EQ((int)dut.rootp->accel__DOT__spk1__DOT__mem[i], gold_q[i], msg);
 
+    int count_before[OUTS];
+    for (int i = 0; i < OUTS; i++)
+      count_before[i] = (int)dut.rootp->accel__DOT__count__DOT__mem[i];
+
     if (!run_until(tb, SWEEP1, "SWEEP1")) return false;
     std::snprintf(msg, sizeof msg,
                   "img %d t=%d: acc2 must match the golden model", img, t);
@@ -245,6 +249,12 @@ static bool run_image(Testbench<Vaccel>& tb, int img) {
     for (int i = 0; i < OUTS; i++)
       CHECK_EQ((int16_t)dut.rootp->accel__DOT__v_mem__DOT__v[128 + i],
                (int16_t)v2[off2 + i], msg);
+
+    std::snprintf(msg, sizeof msg,
+                  "img %d t=%d: spk2 must match the golden model", img, t);
+    for (int i = 0; i < OUTS; i++)
+      CHECK_EQ((int)dut.rootp->accel__DOT__count__DOT__mem[i] - count_before[i],
+               (int)spk2g[off2 + i], msg);
 
     if (t == T / 2) {
       std::snprintf(msg, sizeof msg,
@@ -313,6 +323,7 @@ int main(int argc, char** argv) {
   spk1g = read_hex(std::string(VEC) + "spk1.hex");
   acc2 = read_hex(std::string(VEC) + "acc2.hex");
   v2 = read_hex(std::string(VEC) + "v2.hex");
+  spk2g = read_hex(std::string(VEC) + "spk2.hex");
   counts = read_hex(std::string(VEC) + "counts.hex");
 
   ev_start.resize(ev_len.size());
