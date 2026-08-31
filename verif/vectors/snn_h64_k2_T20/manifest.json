@@ -31,16 +31,6 @@
     "fc2": "00f4cb7a15de8e54"
   },
   "files": {
-    "s_in": {
-      "file": "s_in.hex",
-      "shape": [
-        10,
-        20,
-        784
-      ],
-      "digits": 1,
-      "note": "input spikes, 0/1"
-    },
     "ev_idx": {
       "file": "ev_idx.hex",
       "shape": [

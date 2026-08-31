@@ -106,7 +106,6 @@ def main():
                        "digits": digits, "note": comment}
         write_hex(out / f"{name}.hex", arr, digits, comment)
 
-    emit("s_in",   s_in,                          1, "input spikes, 0/1")
     emit("ev_idx", ev_idx,                        3, "firing input indices, concatenated") #256<784<4096
     emit("ev_len", ev_len,                        3, "events per (image,timestep)") #max 784
     emit("acc1",   stack_trace(trace, "acc1"),    8, "fc1 drained weight sums, int32")
