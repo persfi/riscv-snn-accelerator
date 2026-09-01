@@ -403,3 +403,6 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 
 ## 2026-08-31
 - write README.md
+
+## 2026-09-01
+- edit DESIGN.md README.md format and DESIGN.md 3.3 table/intro.

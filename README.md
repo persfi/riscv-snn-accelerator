@@ -5,6 +5,7 @@ RV32I core driving a spiking-neural-network accelerator. Fixed dataflow and memo
 RTL is intentionally a minority of this repo. Most of the code is verification: a Verilator C++ harness and a testbench per block, under `/verif`.
 
 Started July 2026.
+
 <br>
 
 ## Overview
@@ -16,6 +17,7 @@ This project builds an RV32I CPU and an event-driven SNN accelerator from scratc
 - **Accelerator.** The accelerator is a custom event-driven datapath, built from scratch and run on a fixed dataflow with no dynamic arbitration. It evaluates the network in 28x fewer cycles than the core, and every value it produces matches the reference model exactly.
 - **Software.** A bare-metal C runtime runs on the core and drives the accelerator.
 - **Verification.** 23 RTL blocks have their own C++ testbench. The core is then checked against the official RISC-V test suite, the accelerator against the golden reference model.
+
 <br>
 
 ## Results
@@ -23,8 +25,8 @@ This project builds an RV32I CPU and an event-driven SNN accelerator from scratc
 The same accelerator RTL can run 3 different networks (hidden layer size of 32,64,128) of the LIF SNN on the MNIST dataset, where the hidden layer size is written to the accelerator at runtime. 
 
 The main metric to evaluate the performance of the accelerator design is its cycle counts for inference. All values below are produced by taking the mean of the results from 0-9 MNIST test images.
-<br>
 
+<br>
 
 **End to end**,  whole image in to prediction out. (include image encoding)
 
@@ -50,6 +52,7 @@ Counting only the cycles where something is working, the host encoder takes 96.3
 <img src="docs/img/cycles_end_to_end.png" width="49%" alt="End to end cycle counts">
 <img src="docs/img/cycles_eval.png" width="49%" alt="Network evaluation cycle counts">
 </p>
+<br>
 
 ## Verification
 
@@ -63,11 +66,13 @@ The golden reference model in `model/golden/` defines the correct answer for eve
 | Spike encoder | 18,030 firing indices compared C vs NumPy, 0 mismatches |
 
 The rv32ui, unit testbench and spike encoder results each have a negative control: a deliberate break that made the check fail, then reverted.
+
 <br>
 
 ## Architecture at a glance
 
 No arbiters and no dynamic scheduling anywhere in the datapath: every cycle has exactly one possible next action, so the cycle count is a function of the input data alone.
+
 <br>
 
 ## Build & run

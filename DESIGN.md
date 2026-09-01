@@ -12,7 +12,11 @@ This project demonstrates:
 2. Statically structured system with cycle counts dependent only on the input data.<br>
     a. Every datapath is fixed, so no cycle has two possible next actions.
 
+<br>
+
 ## 2. System Architecture
+
+<br>
 
 ### Memory map
 
@@ -35,6 +39,9 @@ Data Space  (load/store)
 |0x2000_2000 – 0x2000_2FFF| 4KB| event bank B|W|
 |0x2002_0000 – 0x2003_FFFF| 128KB |w1| W|
 |0x2004_0000 – 0x2004_0FFF| 4KB |w2| W|
+
+<br>
+
 
 ### Host & Accelerator Interface
 
@@ -67,6 +74,8 @@ Host contract:
 - write event length after writing an event bank to mark bank full.
 - read COUNT before writing START for the next image.
 
+<br>
+
 ### Sequence
 
 ```
@@ -83,8 +92,11 @@ per image:
             wait STATUS.image_done
             read COUNT[0..2], unpack 10 counts, argmax on the host
 ```
+<br>
 
 ## 3. Decisions & Rejected Alternatives
+
+<br>
 
 ### 3.1 Tooling and environment
 
@@ -162,6 +174,8 @@ Consider DE1-SoC for September target, to demonstrate vendor portability.
 
 </details>
 
+<br>
+
 ### 3.2 Host core
 
 | # | Decision | Chose | Rejected | Because |
@@ -231,7 +245,25 @@ Consider DE1-SoC for September target, to demonstrate vendor portability.
 
 </details>
 
+<br>
+
 ### 3.3 Accelerator
+
+The accelerator runs on a fixed dataflow, every cycle has one possible next action, and the only unpredictability is the number of spikes each image produces. Therefore dynamic arbitration was considered but not needed.
+
+As the dataflow is fixed, there is no schedule to produce. `tools/snnc` only checks the network against the hardware limits and compiles a driver config. 
+
+| # | Decision | Chose | Rejected | Because |
+|---|---|---|---|---|
+| A1 | Input encoding | Rate coding | Latency (temporal) coding | Better model robustness and training effectiveness |
+| A2 | Reset policy | Soft reset (subtract) | Hard reset (zero) | SNN default. Supports rate coding by preserving old magnitudes |
+| A3 | Membrane leak in hardware | `V -= V>>k` shift-subtract | Fixed-point multiply by beta | No correct answer and doesn't need a hardware multiplier |
+| A4 | Number formats and accumulator width | int8 w, int16 v, int32 acc | int16 acc, int32 v | acc does not overflow int32, v is clamped, and weights fit the lanes |
+| A5 | Reset timing | Immediate | Deferred one timestep | No additional signal to carry over timesteps |
+| A6 | Weight quantization | QAT | PTQ | Trains what the hardware runs on |
+| A7 | Random number source for rate coding | Stateless Wang hash | Stateful PRNG | No constant reimplementation |
+| A8 | Where the spike encoder runs | On the core, over MMIO | In the accelerator, or a laptop over UART | Part of data preprocessing |
+| A9 | How the spike queue reaches the accelerator | Event index list + length | 784-bit bitmap | Produced alongside the encoder |
 
 <details>
 <summary>A1: What type of input encoding to use</summary>
@@ -356,7 +388,11 @@ crosses threshold
 
 </details>
 
+<br>
+
 ## 4. Verification
+
+<br>
 
 ### Methodology
 
@@ -365,6 +401,8 @@ Both the core and the accelerator get per-block unit testbenches in `verif/unit/
 For simpler debugging, setting the TRACE environment variable (`TRACE=1 make u-accel`) prints the chosen values every cycle.
 
 The golden reference model in `model/golden/` is the correct answer the accelerator verifies against. It is a bit-exact Python model that produces the values at every step using the same arithmetic the accelerator uses (arithmetic shift, saturation bounds etc). Its outputs, and the inputs they were computed from, are stored in `verif/vectors/` as 15 files.
+
+<br>
 
 ### Vectors
 
@@ -384,6 +422,8 @@ The golden reference model in `model/golden/` is the correct answer the accelera
 | spk2.hex | layer 2 spikes | compared by accel_tb (by change in the output counters) |
 | labels.hex | MNIST ground truth | not consumed|
 
+<br>
+
 ### Rate encoder
 
 The encoder exists twice: `spikes_at()` in NumPy for the golden reference model, and `encode_timestep()` in C for the core, both built on the same Thomas Wang hash keyed by image, timestep and pixel. 
@@ -402,6 +442,8 @@ The 10 encoded images are identical for h32, h64, and h128 input.
 
 **Negative control:** Changed the encoder's threshold test from `<` to `<=` and all 10 images failed; reverting restored 10/10.
 
+<br>
+
 ### RISC-V core: riscv-tests results
 
 | Metric | Value |
@@ -419,6 +461,8 @@ Run against the unmodified upstream rv32ui test bodies, via a CSR/trap-free envi
 | fence_i | Zifencei extension, not base RV32I, not needed for compliance. Split I and D memories (Harvard), so storing can never reach imem. |
 
 **Negative control:** Broke `add` (used everywhere, including boot) and all 40 tests failed; broke `or` and `xor` individually and only their own tests failed. Confirms the tohost signal detects real failures, not a rubber stamp.
+
+<br>
 
 ### Unit testbenches: accelerator and core
 
@@ -443,6 +487,8 @@ Run against the unmodified upstream rv32ui test bodies, via a CSR/trap-free envi
 
 **Negative control:** Corrupted one 32-bit word of w1 line 6467, only 62757/62861 tests passed; restoring it returned 62861/62861. Confirms the comparison detects a wrong weight.
 
+<br>
+
 ### System-level tests
 
 `make test-system` compiles `sw/apps/mnist.c` with `riscv64-unknown-elf-gcc -march=rv32i -mabi=ilp32` and runs it on the core, which encodes the spikes, writes them over the bus and reads the counts back through MMIO. 
@@ -457,6 +503,8 @@ Run against the unmodified upstream rv32ui test bodies, via a CSR/trap-free envi
 
 The unit testbenches prove each block's functions, these system-level tests prove they are wired together and the driver uses them correctly. 
 
+<br>
+
 ### Network shapes 
 
 The same RTL runs 784-32-10, 784-64-10 and 784-128-10 model shapes. In order to do so, the hidden size is written at runtime.
@@ -469,13 +517,19 @@ The same RTL runs 784-32-10, 784-64-10 and 784-128-10 model shapes. In order to 
 
 Integer accuracy is run by the golden model while the float accuracy is the original trained model without the hardware shift leak and scaled integer threshold. 
 
+<br>
+
 ## 5. Results
+
+<br>
 
 ### Cycle counts
 
 Cycle counts are presented as a mean over MNIST test images 0-9.  Two types of comparisons are made.
 1. core(encode + network evaluation) vs core(encode) + accelerator(network evaluation) end to end
 2. core vs accelerator's network evaluation
+
+<br>
 
 **1. End to end**, whole image in to prediction out.
 
@@ -497,6 +551,8 @@ Cycle counts are presented as a mean over MNIST test images 0-9.  Two types of c
 | 32 | 446,652 | 15,453 | 4.0% | 28.9x |
 | 64 | 871,712 | 30,583 | 8.0% | 28.5x |
 | 128 | 1,713,671 | 60,457 | 15.7% | 28.3x |
+
+<br>
 
 <p>
 <img src="docs/img/cycles_end_to_end.png" width="49%" alt="End to end cycle counts">
