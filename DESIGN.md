@@ -16,7 +16,6 @@ This project demonstrates:
 
 ## 2. System Architecture
 
-<br>
 
 ### Memory map
 
@@ -96,7 +95,6 @@ per image:
 
 ## 3. Decisions & Rejected Alternatives
 
-<br>
 
 ### 3.1 Tooling and environment
 
@@ -392,7 +390,6 @@ crosses threshold
 
 ## 4. Verification
 
-<br>
 
 ### Methodology
 
@@ -520,8 +517,6 @@ Integer accuracy is run by the golden model while the float accuracy is the orig
 <br>
 
 ## 5. Results
-
-<br>
 
 ### Cycle counts
 

@@ -6,6 +6,9 @@ RTL is intentionally a minority of this repo. Most of the code is verification: 
 
 Started July 2026.
 
+> [!NOTE]
+> Design rationale, memory map, decisions, verification and results are in **[DESIGN.md →](DESIGN.md)**
+
 <br>
 
 ## Overview
