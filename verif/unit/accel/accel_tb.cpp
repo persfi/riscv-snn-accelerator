@@ -130,9 +130,27 @@ static int state_of(Testbench<Vaccel>& tb) {
   return (int)tb.top.rootp->accel__DOT__sequencer__DOT__state;
 }
 
+static void trace_cycle(Testbench<Vaccel>& tb) {
+  auto* r = tb.top.rootp;
+  TRACE_LINE(
+      "c=%6llu st=%d ls=%d t=%2d wc=%2d wcq=%2d lim=%2d pend=%x stall=%d "
+      "lane=%d evlen=%3d evidx=%3d spkptr=%3d",
+      (unsigned long long)tb.cycle(), (int)r->accel__DOT__sequencer__DOT__state,
+      (int)r->accel__DOT__layer_state, (int)r->accel__DOT__sequencer__DOT__t,
+      (int)r->accel__DOT__word_cnt, (int)r->accel__DOT__word_cnt_q,
+      (int)r->accel__DOT__sequencer__DOT__word_limit,
+      (int)r->accel__DOT__sequencer__DOT__pending,
+      (int)r->accel__DOT__sequencer__DOT__word_cnt_stall,
+      (int)r->accel__DOT__sequencer__DOT__lane,
+      (int)r->accel__DOT__sequencer__DOT__ev_len,
+      (int)r->accel__DOT__sequencer__DOT__ev_idx_q,
+      (int)r->accel__DOT__sequencer__DOT__spk1_wr_ptr);
+}
+
 static bool run_until(Testbench<Vaccel>& tb, int want, const char* name) {
   for (int i = 0; i < 200000; i++) {
     tb.tick();
+    trace_cycle(tb);
     if (tb.top.image_done) saw_image_done = true;
     if (state_of(tb) == want) return true;
   }
@@ -148,7 +166,7 @@ static void fill_bank(Testbench<Vaccel>& tb, int step, bool bank_b) {
   bus_write(tb, bank_b ? EVB_LEN_ADDR : EVA_LEN_ADDR, ev_len[step]);
 }
 
-//tb uploads weights instead of using readmemh for different model validation
+// tb uploads weights instead of using readmemh for different model validation
 static void upload_weights(Testbench<Vaccel>& tb) {
   for (size_t i = 0; i < w1.size(); i++)
     bus_write(tb, W1_BASE + 4u * (uint32_t)i, w1[i]);
@@ -333,22 +351,23 @@ int main(int argc, char** argv) {
     acc += ev_len[i];
   }
 
-  //find hidden and shift
+  // find hidden and shift
   HIDDEN = (int)(v1.size() / (size_t)(IMAGES * T));
   H_SHIFT = 0;
   for (int w = HIDDEN / LANES; w > 1; w >>= 1) H_SHIFT++;
 
   V_TH1 = manifest_int("fc1", "v_th_int");
   V_TH2 = manifest_int("fc2", "v_th_int");
-  K = manifest_int("k"); 
-  //finding the correct fc1,fc2, and k from manifest json for different models
+  K = manifest_int("k");
+  // finding the correct fc1,fc2, and k from manifest json for different models
 
-  //check that the pre pritten consts T and IMAGE assumed in tb matches the manifest config.
+  // check that the pre pritten consts T and IMAGE assumed in tb matches the
+  // manifest config.
   if (manifest_int("T") != T || manifest_int("n_images") != IMAGES) {
     std::fprintf(stderr, "manifest T/n_images do not match this bench\n");
     return 1;
   }
-  //print run shape
+  // print run shape
   std::fprintf(stderr, "[accel_tb] %s hidden=%d h_shift=%d vth=%d/%d k=%d\n",
                VEC.c_str(), HIDDEN, H_SHIFT, V_TH1, V_TH2, K);
 
@@ -360,7 +379,7 @@ int main(int argc, char** argv) {
   dut.host_addr = 0;
   tb.settle();
 
-  tb.tick(); //reset clk
+  tb.tick();  // reset clk
 
   dut.rst = 0;
   tb.settle();

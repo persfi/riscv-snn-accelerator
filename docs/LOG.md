@@ -400,3 +400,6 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - test encode only ran one img at a time → added a loop to makefile to run all 10 imgs and compare against evidx and evlen instead of just evlen
 - tbs were able to read rtl mems because of --trace. added  verilator public_flat_rd to all of the read mems in rtl
 - changed makefile so now make check runs over all shapes instead of just h128.
+
+## 2026-08-31
+- write README.md
