@@ -27,11 +27,11 @@ This project builds an RV32I CPU and an event-driven SNN accelerator from scratc
 
 The same accelerator RTL can run 3 different networks (hidden layer size of 32,64,128) of the LIF SNN on the MNIST dataset, where the hidden layer size is written to the accelerator at runtime. 
 
-The main metric to evaluate the performance of the accelerator design is its cycle counts for inference. All values below are produced by taking the mean of the results from 0-9 MNIST test images.
+The main metric to evaluate the performance of the accelerator design is its cycle counts for inference. All values below are produced by taking the mean of the results from #0-9 MNIST test images.
 
 <br>
 
-**End to end**,  whole image in to prediction out. (include image encoding)
+**End to end**,  whole image in to prediction out. (includes image encoding)
 
 | hidden | core alone | core + accelerator | speedup | model accuracy (integer) |
 |---|---|---|---|---|
@@ -39,7 +39,7 @@ The main metric to evaluate the performance of the accelerator design is its cyc
 | 64 | 1,278,066 | 404,258 | 3.2x | 96.95% |
 | 128 | 2,120,792 | 405,776 | 5.2x | 97.63% |
 
-**Network evaluation only**, the architecture actually replaced by the accelerator. (exclude image encoding)
+**Network evaluation only**, the architecture actually replaced by the accelerator. (excludes image encoding)
 
 | hidden | core | accelerator busy | accelerator busy% | speedup |
 |---|---|---|---|---|

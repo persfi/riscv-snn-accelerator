@@ -406,3 +406,9 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 
 ## 2026-09-01
 - edit DESIGN.md README.md format and DESIGN.md 3.3 table/intro.
+
+## 2026-09-08
+- created project on vivado
+- test blinking on fpga: run synthesis, implementation, generate bitstream
+- declared a 100mhz clock and a led to see it blink
+- the reset button of the arty is wired to dedicated pin program_b so it reconfigures the board when pressed. (_B is active low)

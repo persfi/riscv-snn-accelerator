@@ -367,7 +367,7 @@ crosses threshold
 
 **Rejected:** The accelerator runs the encoder and the host writes raw pixels, laptop precomputes and writes spikes to accelerator via UART
 
-**Because:** The encoding was part of data preprocessing, therefore left out of accelerator design. Originally thought the encoding would take only a small portion of the cycles, experiment results proved that to be wrong: for h128 the accelerator spends 87% of its cycles waiting for the core to encode the next timestep.
+**Because:** The encoding was part of data preprocessing, therefore left out of accelerator design. Originally thought the encoding would take only a small portion of the cycles, experiment results proved that to be wrong: for h128 the accelerator spends 84% of its non-idle cycles waiting for the core to encode the next timestep.
 
 **Revisit if:** Encoding cycles dominate, which they do. Moving the encoder into the accelerator should recover these cycles. Will be revisited.
 
