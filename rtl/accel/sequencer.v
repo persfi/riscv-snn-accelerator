@@ -13,7 +13,7 @@ module sequencer (
     output [6:0] spk1_wr_data,
     output reg [1:0] v_ctrl,
     output reg [1:0] acc_ctrl,
-    output layer_state,
+    output reg layer_state,
     output [4:0] word_cnt, //to weight_addr
     output reg [4:0] word_cnt_q, //to acc and v read and write
     output [9:0] ev_idx,

@@ -412,3 +412,12 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - test blinking on fpga: run synthesis, implementation, generate bitstream
 - declared a 100mhz clock and a led to see it blink
 - the reset button of the arty is wired to dedicated pin program_b so it reconfigures the board when pressed. (_B is active low)
+
+## 2026-09-13
+- synthesized the project, found a bug in sequencer where layer state is assigned in always but not declared reg in output port(verilator allows it but vivado uses standard rules of verilog)
+- address of the weights is 15 bits thats 32768 addresses. Each tile holds 1024 addresses. so w1 is 32(32768/1024) tiles * 1024\*36\(bits of each tile\) =144KB (vivado synthesized RAM36 which is 36 bits per tile to the w1 mem). In DESIGN.md memory map it's 128KB because 32768*32 = 128KB.
+- pc(with imem) with report_utilization -hierarchical from tcl shows that the ram takes 1315 while dmem is only 550(lutram). thought that theres some issue with imem. but then after -flatten_hierarchy none, figured its 1315 because its the whole path including alu, branch, and other combinational modules. The actual lut used for imem is 289
+- imem is 289 and dmem is 550 because dmem is actual lutram while imem is compressed into logic because it doesnt have write port. 
+- vivado cant find the readmemh file because it doesnt run from this project dir root. Add_files to source(the three includes) and used verilog_define {PROGRAM="mnist.hex" W1_INIT="w1.hex" W2_INIT="w2.hex"}. Forgot to add "" and that the include doesn't treat it as string → added it. No more errors.
+- changed xdc's original clk name to my clk pin name
+
