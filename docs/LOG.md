@@ -421,3 +421,9 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - vivado cant find the readmemh file because it doesnt run from this project dir root. Add_files to source(the three includes) and used verilog_define {PROGRAM="mnist.hex" W1_INIT="w1.hex" W2_INIT="w2.hex"}. Forgot to add "" and that the include doesn't treat it as string → added it. No more errors.
 - changed xdc's original clk name to my clk pin name
 
+## 2026-09-15
+- ran implementation. WNS worst negative slack = -7.501, needs at least 10+7.501 ns between each cycle. 1/17.501 = 57MHz, so 50Mhz clock works with some slack
+- added plle2_base module from example templates in vivado, edited it to make it output 50mhz
+- implemented the pll to blink to test if it actully works. becasue the lock(meaning pll has settled to a stable output) is only high when pll has configured properly, so as it blinks properly after programming it to the board, it means pll is correct
+- cant divide the outpput clk with DIVCLK_DIVIDE bc this output is VCO, and VCO has to be from typically 800MHz to 1600MHz on arty a7 so its later devided to 50MHz with CLKOUT0_DIVIDE instead
+- accidentally checked "copy source to project" while adding the fpga directory → source not updating when theres changes in the repo bc it reads a copied version → delete and uncheck it
