@@ -113,6 +113,7 @@ int main(int argc, char** argv) {
             if (saw_int)
                 std::fprintf(stderr, "[sim] prediction = %u\n",
                              (unsigned)last_int);
+            std::fprintf(stderr, "[sim] led = %x\n", (unsigned)dut.led_q);
             std::fprintf(stderr, "[sim] EXIT code=%u after %llu cycles\n",
                          code, (unsigned long long)(tb.cycle() - start));
             return (int)code;

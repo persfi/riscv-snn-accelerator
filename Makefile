@@ -264,14 +264,15 @@ test-system: $(SOC_RUN)
 			printf "  \033[31mFAIL\033[0m image %d: sw-build failed\n" $$i; \
 			echo "$$out" | grep -m3 -i error; fail=$$((fail+1)); continue; \
 		fi; \
-		$(SOC_RUN) $(SW_DIR)/$(SYS_APP).hex $(SYS_MAX) 2>/dev/null \
+		$(SOC_RUN) $(SW_DIR)/$(SYS_APP).hex $(SYS_MAX) 2>$(BUILD_DIR)/sys.err \
 			| grep -v '^%' > $(BUILD_DIR)/sys.got; \
+		led=`awk '/^\[sim\] led/ {print $$4}' $(BUILD_DIR)/sys.err`; \
 		sed -n "$$((i*10+1)),$$((i*10+10))p" $(BUILD_DIR)/sys.counts > $(BUILD_DIR)/sys.want; \
 		sed -n "$$((i+1))p" $(BUILD_DIR)/sys.pred >> $(BUILD_DIR)/sys.want; \
 		if diff -q $(BUILD_DIR)/sys.want $(BUILD_DIR)/sys.got >/dev/null; then \
-			printf "  \033[32mPASS\033[0m image %d\n" $$i; pass=$$((pass+1)); \
+			printf "  \033[32mPASS\033[0m image %d  led=%s\n" $$i "$$led"; pass=$$((pass+1)); \
 		else \
-			printf "  \033[31mFAIL\033[0m image %d  (want | got; rows 1-10 = class counts, row 11 = argmax)\n" $$i; \
+			printf "  \033[31mFAIL\033[0m image %d  led=%s  (want | got; rows 1-10 = class counts, row 11 = argmax)\n" $$i "$$led"; \
 			paste $(BUILD_DIR)/sys.want $(BUILD_DIR)/sys.got | cat -n; \
 			fail=$$((fail+1)); \
 		fi; \

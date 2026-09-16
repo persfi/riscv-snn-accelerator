@@ -427,3 +427,9 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - implemented the pll to blink to test if it actully works. becasue the lock(meaning pll has settled to a stable output) is only high when pll has configured properly, so as it blinks properly after programming it to the board, it means pll is correct
 - cant divide the outpput clk with DIVCLK_DIVIDE bc this output is VCO, and VCO has to be from typically 800MHz to 1600MHz on arty a7 so its later devided to 50MHz with CLKOUT0_DIVIDE instead
 - accidentally checked "copy source to project" while adding the fpga directory → source not updating when theres changes in the repo bc it reads a copied version → delete and uncheck it
+
+## 2026-09-16
+- wired led sel to soc so the led_q can be connected to the top module (which it drives the actually leds in the xdc)
+- mnist.c write the led index to mmio_led, which is a store instruction for it so core_we will be 1. mmio_led is write only now because I didnt add an arm of it to core_d_rdata (not needed in the c program)
+- updated harness (makefile) to print the led in terminal
+

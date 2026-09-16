@@ -9,4 +9,5 @@ int main() {
   int pred = snn_run_image(IMAGE_INDEX);
   for (int i = 0; i < 10; i++) MMIO_PRINT_INT = ACCEL_COUNT(i);
   MMIO_PRINT_INT = pred;
+  MMIO_LED = pred;
 }
