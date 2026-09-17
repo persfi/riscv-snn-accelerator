@@ -1,4 +1,9 @@
-module clk_gen (input clk_in, input rst_in, output clk_out, output locked);
+module clk_gen (
+   input clk_in, 
+   input rst_in, 
+   output clk_out, 
+   output locked
+);
 
    // PLLE2_BASE: Base Phase Locked Loop (PLL)
    //             Artix-7

@@ -432,4 +432,8 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - wired led sel to soc so the led_q can be connected to the top module (which it drives the actually leds in the xdc)
 - mnist.c write the led index to mmio_led, which is a store instruction for it so core_we will be 1. mmio_led is write only now because I didnt add an arm of it to core_d_rdata (not needed in the c program)
 - updated harness (makefile) to print the led in terminal
-
+- wrote top.v with a 2 flop synchronizer for the reset function that delays the reset by two edges to prevent unstable signals.
+- new wns with top added after synthesization and implementation : +0.308ns. critical path spends 80% in routing rather than logic
+- red prog button is for loading the program from flash. I rpogrammed the board over jtag so theres nothing in flash
+- set btn[0] for the reset button. 
+- programming the board, succesfully inferred img 9 (the current img index generated)
