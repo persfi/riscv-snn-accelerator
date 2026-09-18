@@ -20,7 +20,7 @@ module clk_gen (
 
       // CLKOUT0_DIVIDE - CLKOUT5_DIVIDE: Divide amount for each CLKOUT (1-128)
       .DIVCLK_DIVIDE(1),
-      .CLKOUT0_DIVIDE(20),
+      .CLKOUT0_DIVIDE(25),
 
       // CLKOUT0_DUTY_CYCLE - CLKOUT5_DUTY_CYCLE: Duty cycle for each CLKOUT (0.001-0.999).
       .CLKOUT0_DUTY_CYCLE(0.5),

@@ -6,9 +6,9 @@ module blink (
 );
 
     reg [25:0] cnt;
-    wire clk50;
+    wire clk_sys;
     wire pll_locked;
-    always @(posedge clk50) begin
+    always @(posedge clk_sys) begin
         
         cnt <= cnt+1;
         led0_b<=cnt[25];
@@ -18,7 +18,7 @@ module blink (
     clk_gen clk_gen(
         .clk_in(clk),
         .rst_in(1'b0),
-        .clk_out(clk50),
+        .clk_out(clk_sys),
         .locked(pll_locked)
     );
 
