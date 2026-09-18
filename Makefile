@@ -158,15 +158,26 @@ LIBSNN    := $(wildcard sw/libsnn/*.c)
 # img=<n> rewrites sw/libsnn/image.h for that test image first, so `make bench
 # img=3` and `make app-mnist img=3` run the same input. Omitted, image.h is left
 # alone (test-system drives gen_image_h.py itself).
+# Apps listed in BOARD_APPS get a second variant built with -DBOARD:
+#   <app>.hex        for the harness: runs once, writes MMIO_EXIT, sim stops
+#   <app>_board.hex  polls the switches forever; this is the one Vivado bakes
+#                    into the bitstream
+# Both are built every time, so neither can go stale behind the other.
+BOARD_APPS := mnist
+define SW_LINK
+	$(CC) $(ARCH_FLAGS) -O1 -nostdlib -nostartfiles -I$(BSP) $(2) \
+		-T$(LDSCRIPT) $(CRT0) $(APP_SRC) $(LIBSNN) -o $(SW_DIR)/$(1).elf -lgcc
+	$(OBJCOPY) -O binary $(SW_DIR)/$(1).elf $(SW_DIR)/$(1).bin
+	od -An -tx4 --endian=little -v $(SW_DIR)/$(1).bin > $(SW_DIR)/$(1).hex
+endef
+
 sw-build: netcfg
 	@test -n "$(APP)" || (echo "usage: make sw-build APP=<name>  (sw/apps/<name>.S or .c)"; exit 1)
 	@$(if $(img),python3 scripts/gen_image_h.py $(img) >/dev/null)
 	@test -n "$(APP_SRC)" || (echo "no sw/apps/$(APP).S or sw/apps/$(APP).c"; exit 1)
 	@mkdir -p $(SW_DIR)
-	$(CC) $(ARCH_FLAGS) -O1 -nostdlib -nostartfiles -I$(BSP) \
-		-T$(LDSCRIPT) $(CRT0) $(APP_SRC) $(LIBSNN) -o $(SW_DIR)/$(APP).elf -lgcc
-	$(OBJCOPY) -O binary $(SW_DIR)/$(APP).elf $(SW_DIR)/$(APP).bin
-	od -An -tx4 --endian=little -v $(SW_DIR)/$(APP).bin > $(SW_DIR)/$(APP).hex
+	$(call SW_LINK,$(APP),)
+	$(if $(filter $(APP),$(BOARD_APPS)),$(call SW_LINK,$(APP)_board,-DBOARD))
 
 # Read the ELF before running it: symbol map, section addresses, disassembly.
 sw-dump: sw-build
@@ -252,19 +263,15 @@ SYS_IMAGES := 10
 
 test-system: $(SOC_RUN)
 	@mkdir -p $(BUILD_DIR)
-	@cp sw/libsnn/image.h $(BUILD_DIR)/image.h.bak
 	@cp sw/libsnn/netcfg.h $(BUILD_DIR)/netcfg.h.bak 2>/dev/null || true
 	@$(MAKE) --no-print-directory netcfg >/dev/null
 	@grep -v '^//' $(VEC_DIR)/counts.hex | sed 's/^0*//;s/^$$/0/' > $(BUILD_DIR)/sys.counts
 	@grep -v '^//' $(VEC_DIR)/pred.hex   | sed 's/^0*//;s/^$$/0/' > $(BUILD_DIR)/sys.pred
+	@python3 scripts/gen_image_h.py >/dev/null
+	@$(MAKE) --no-print-directory sw-build APP=$(SYS_APP) >/dev/null
 	@pass=0; fail=0; \
 	for i in $$(seq 0 $$(($(SYS_IMAGES)-1))); do \
-		python3 scripts/gen_image_h.py $$i >/dev/null; \
-		if ! out=`$(MAKE) --no-print-directory sw-build APP=$(SYS_APP) 2>&1`; then \
-			printf "  \033[31mFAIL\033[0m image %d: sw-build failed\n" $$i; \
-			echo "$$out" | grep -m3 -i error; fail=$$((fail+1)); continue; \
-		fi; \
-		$(SOC_RUN) $(SW_DIR)/$(SYS_APP).hex $(SYS_MAX) 2>$(BUILD_DIR)/sys.err \
+		$(SOC_RUN) $(SW_DIR)/$(SYS_APP).hex $(SYS_MAX) --sw $$i 2>$(BUILD_DIR)/sys.err \
 			| grep -v '^%' > $(BUILD_DIR)/sys.got; \
 		led=`awk '/^\[sim\] led/ {print $$4}' $(BUILD_DIR)/sys.err`; \
 		sed -n "$$((i*10+1)),$$((i*10+10))p" $(BUILD_DIR)/sys.counts > $(BUILD_DIR)/sys.want; \
@@ -277,7 +284,6 @@ test-system: $(SOC_RUN)
 			fail=$$((fail+1)); \
 		fi; \
 	done; \
-	cp $(BUILD_DIR)/image.h.bak sw/libsnn/image.h; \
 	test -f $(BUILD_DIR)/netcfg.h.bak && cp $(BUILD_DIR)/netcfg.h.bak sw/libsnn/netcfg.h; \
 	echo "-----"; \
 	echo "system[$(run)]: $$pass/$(SYS_IMAGES) images match golden counts and argmax"; \
