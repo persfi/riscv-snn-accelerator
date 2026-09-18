@@ -10,7 +10,14 @@
 int main() {
     Testbench<Vimem> tb("verif/build/imem/imem.vcd");
     auto& dut = tb.top;
-    load_hex(tb.top.rootp->imem__DOT__mem, "verif/unit/imem/vectors.hex", 1024); //rootp: where you access mem and other internal module design. Load hex (vectors.hex) to mem from imem.
+
+    // Depth comes from the Verilated array so the probe addresses below track
+    // imem.v's DEPTH param instead of restating it.
+    auto& mem = tb.top.rootp->imem__DOT__mem;
+    const uint32_t depth = sizeof(mem) / sizeof(mem[0]);
+    const uint32_t window = depth * 4;  // byte size of the decoded window
+    load_hex(mem, "verif/unit/imem/vectors.hex", depth);
+    mem[depth - 1] = 0xabcdefff;  // boundary sentinel: index depends on DEPTH
 
     dut.addr = 0x0;
     tb.settle();
@@ -32,13 +39,13 @@ int main() {
     TRACE_LINE("addr=%08x inst=%08x", (uint32_t)dut.addr, (uint32_t)dut.inst);
     CHECK_EQ(dut.inst, 0x00000015, "imem should be able to truncate the lower bits of the addr to multiples of 4 to read words for instructions");
 
-    dut.addr = 0x100a; //should decode to the same as 0xa which should be truncated to 0x8
+    dut.addr = window + 0xa; 
     tb.settle();
     TRACE_LINE("addr=%08x inst=%08x", (uint32_t)dut.addr, (uint32_t)dut.inst);
     CHECK_EQ(dut.inst, 0x00000015, "imem should be able to truncate the upper bits of the addr to multiples of 4 to read words for instructions");
 
 
-    dut.addr = 0xffc; // byte addr of word index 1023 = DEPTH-1, the boundary
+    dut.addr = window - 4; 
     tb.settle();
     TRACE_LINE("addr=%08x inst=%08x", (uint32_t)dut.addr, (uint32_t)dut.inst);
     CHECK_EQ(dut.inst, 0xabcdefff, "imem should read index DEPTH-1 at the top of its window");

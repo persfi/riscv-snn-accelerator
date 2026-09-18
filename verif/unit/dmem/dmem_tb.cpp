@@ -11,7 +11,14 @@
 int main() {
     Testbench<Vdmem> tb("verif/build/dmem/dmem.vcd");
     auto& dut = tb.top;
-    load_hex(tb.top.rootp->dmem__DOT__mem, "verif/unit/dmem/vectors.hex", 1024);
+
+    // Depth comes from the Verilated array so the probe addresses below track
+    // dmem.v's DEPTH param instead of restating it.
+    auto& mem = tb.top.rootp->dmem__DOT__mem;
+    const uint32_t depth = sizeof(mem) / sizeof(mem[0]);
+    const uint32_t window = depth * 4;  // byte size of the decoded window
+    load_hex(mem, "verif/unit/dmem/vectors.hex", depth);
+    mem[depth - 1] = 0xabcdefff;  // boundary sentinel: index depends on DEPTH
 
     dut.addr = 0x0;
     tb.settle();
@@ -33,12 +40,12 @@ int main() {
     TRACE_LINE("addr=%08x rdata=%08x", (uint32_t)dut.addr, (uint32_t)dut.rdata);
     CHECK_EQ(dut.rdata, 0x00000015, "dmem should be able to truncate the lower bits of the addr to multiples of 4 to read words");
 
-    dut.addr = 0x100a; //should decode to the same as 0xa which should be truncated to 0x8
+    dut.addr = window + 0xa; 
     tb.settle();
     TRACE_LINE("addr=%08x rdata=%08x", (uint32_t)dut.addr, (uint32_t)dut.rdata);
     CHECK_EQ(dut.rdata, 0x00000015, "dmem should be able to truncate the upper bits of the addr to multiples of 4 to read words");
 
-    dut.addr = 0xffc; // byte addr of word index 1023 = DEPTH-1, the boundary
+    dut.addr = window - 4; 
     tb.settle();
     TRACE_LINE("addr=%08x rdata=%08x", (uint32_t)dut.addr, (uint32_t)dut.rdata);
     CHECK_EQ(dut.rdata, 0xabcdefff, "dmem should read index DEPTH-1 at the top of its window");

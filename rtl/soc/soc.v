@@ -1,8 +1,9 @@
 module soc #(
-    parameter DMEM_DEPTH = 1024
+    parameter DMEM_DEPTH = 4096
 )(
     input clk,
     input rst,
+    input [3:0] sw,
     output [31:0] pc_q,
     output [31:0] inst,
     output unknown_op,
@@ -32,11 +33,14 @@ module soc #(
     wire dmem_sel;
     wire accel_sel;
     wire led_sel;
+    wire sw_sel;
     
     assign dmem_sel = core_d_addr < DMEM_SIZE_BYTES;
     assign accel_sel = core_d_addr[31:28] == 4'h2;
+    assign sw_sel = core_d_addr == SW_ADDR;
     assign core_d_rdata = dmem_sel ? dmem_rdata : 
-                    accel_sel? accel_rdata: 32'b0;
+                    accel_sel? accel_rdata: 
+                    sw_sel? {28'b0, sw}:32'b0;
   
     assign exit_sel = (core_d_addr == EXIT_ADDR) && core_d_we;
     assign exit_code = core_d_wdata;

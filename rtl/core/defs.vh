@@ -47,6 +47,7 @@ localparam [31:0] RESET_VECTOR = 32'h0000_0000;
 localparam [31:0] PRINT_ADDR = 32'h1000_0000;
 localparam [31:0] PRINT_INT_ADDR = 32'h1000_0008;
 localparam [31:0] LED_ADDR = 32'h1000_000c;
+localparam [31:0] SW_ADDR = 32'h10000010;
 localparam [31:0] EXIT_ADDR  = 32'h1000_0004;
 
 //`endif

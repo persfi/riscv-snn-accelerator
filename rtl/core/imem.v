@@ -4,7 +4,7 @@
 
 /* verilator lint_off UNUSEDSIGNAL */
 module imem # (
-    parameter DEPTH = 1024
+    parameter DEPTH = 4096
 )(
     input [31:0] addr, 
     output [31:0] inst

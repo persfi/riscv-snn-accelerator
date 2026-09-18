@@ -5,7 +5,7 @@
 
 /* verilator lint_off UNUSEDSIGNAL */
 module dmem # (
-    parameter DEPTH = 1024
+    parameter DEPTH = 4096
 )(
     input clk,
     input mem_we,

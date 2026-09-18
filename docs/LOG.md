@@ -437,3 +437,16 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - red prog button is for loading the program from flash. I rpogrammed the board over jtag so theres nothing in flash
 - set btn[0] for the reset button. 
 - programming the board, succesfully inferred img 9 (the current img index generated)
+
+## 2026-09-17
+- increase imem and dmem so that it can fit 10 images' pixels → mnist hex's const array images will be compiled and places in .rodata(read only data) → so based on the switches on the fpga the program and tell which image I want to infer now → no need to re-synthesize and implement for every image
+- git commit corrupted → deleted it and it's 18 0 byte objects and recovered the one before the last commit
+- changed imem and dmem's tb array probes so that it depends on the array size and not hardcoded address
+- added sw from xdc and to top.v. added the read mmio bus for sw number.
+- WNS would likely be negative again since mapped more memory (longer traces between things) → -2.134ns → changed the clock to 40mhz → +0.508ns wns (not as much as the calculation bc Vivado will stop optimizaing once the constraint is met)
+- changed mnist.c so that it reruns the program continuously. so if the switches change I dont need to press reset button to see the update.
+- used ifdef such that sim still reads the non-looped version (tb has cycle limit) while vivado uses the looped version
+- fpga works
+                                               
+
+

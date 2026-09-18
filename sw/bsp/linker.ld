@@ -15,7 +15,7 @@ SECTIONS
   _bss_end = .;          /* symbol = address just past .bss */
   
   _end = .;
-  _stack_top = 0x1000;   
+  _stack_top = 0x4000;   
 
   ASSERT(_end <= _stack_top - 0x100, "sections grew into the stack reserve")
 

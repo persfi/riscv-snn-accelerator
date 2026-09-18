@@ -9,7 +9,10 @@
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::fprintf(stderr, "usage: %s <program.hex> [max_cycles]\n", argv[0]);
+        std::fprintf(stderr,
+                     "usage: %s <program.hex> [max_cycles] [--sw N] "
+                     "[--dump-events]\n",
+                     argv[0]);
         return 2;
     }
     const char* hex_path = argv[1];
@@ -19,8 +22,12 @@ int main(int argc, char** argv) {
 
     // --dump-events: sw/apps/encode.c fills event bank A with the indices that fired, then writes the count of them to PRINT_INT. With this flag each count is followed by that many entries of bank A, so stdout carries both ev_len and ev_idx.
     bool dump_events = false;
-    for (int i = 1; i < argc; i++)
+    uint32_t sw_val = 0;
+    for (int i = 1; i < argc; i++) {
         if (std::strcmp(argv[i], "--dump-events") == 0) dump_events = true;
+        else if (std::strcmp(argv[i], "--sw") == 0 && i + 1 < argc)
+            sw_val = (uint32_t)std::strtoul(argv[++i], nullptr, 0) & 0xF;
+    }//type --sw N as command in terminal to run the image you want (or testsystem for all of them)
 
     Testbench<Vsoc> tb("verif/build/soc-run/run.vcd");
     auto& dut  = tb.top;
@@ -28,7 +35,7 @@ int main(int argc, char** argv) {
     auto& dmem = tb.top.rootp->soc__DOT__dmem__DOT__mem;
 
     // Depths read straight from the Verilated arrays, so they track the RTL's
-    // DEPTH params with no second source of truth (same trick as the runner).
+    // DEPTH params with no second source of truth (same the runner).
     const size_t idepth = sizeof(imem) / sizeof(imem[0]);
     const size_t ddepth = sizeof(dmem) / sizeof(dmem[0]);
     load_hex(imem, hex_path, idepth);
@@ -46,6 +53,7 @@ int main(int argc, char** argv) {
 
     // Reset one cycle, then release. The computation baseline is measured from
     // release, so snapshot the cycle count there.
+    dut.sw = sw_val;
     dut.rst = 1;
     tb.tick();
     dut.rst = 0;
