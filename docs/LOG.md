@@ -448,5 +448,10 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - used ifdef such that sim still reads the non-looped version (tb has cycle limit) while vivado uses the looped version
 - fpga works
                                                
-
+## 2026-09-20
+- record demo video
+- add fpga results to README.md
+- core's critical path is the load instruction that goes to imem regfile dmem then regfile writeback.
+- to access lutram the signals fan out to couple thousand. if its in bram since bram is in blocks it'll only fan out to 4 blocks. So in terms of speed lutram is slower but it reads on the same cycle
+- accelerator's critical path is 20.9ns which means ~48mhz ceiling for clock. to increase clk frequency i'd have to pipeline both the accel and the core or else if i only do the core the clock will cap at 48mhz. (Or I use different clocks for them but thats a future design decision)
 

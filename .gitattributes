@@ -1,1 +1,7 @@
+# Generated
+sw/libsnn/image.h  linguist-generated=true
+sw/libsnn/netcfg.h linguist-generated=true
 
+
+verif/vectors/**   linguist-generated=true
+verif/riscv-tests/** linguist-vendored=true

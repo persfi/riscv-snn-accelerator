@@ -11,13 +11,17 @@ Started July 2026.
 
 <br>
 
+## Demo
+
+<br>
+
 ## Overview
 
 This project builds an RV32I CPU and an event-driven SNN accelerator from scratch, together with the network they run and the software that drives them.
 
 - **Core.** The core is a single-cycle RV32I implementation, passed the official rv32ui suite.
 - **Model.** The network is a two-layer LIF SNN, trained on MNIST with snntorch. Reaches 97.6% test accuracy, and its integer form creates the golden reference model.
-- **Accelerator.** The accelerator is a custom event-driven datapath, built from scratch and run on a fixed dataflow with no dynamic arbitration. It evaluates the network in 28x fewer cycles than the core, and every value it produces matches the reference model exactly.
+- **Accelerator.** The accelerator is a custom event-driven datapath, built from scratch and run on a fixed dataflow with no dynamic arbitration. It evaluates the network 5.2x faster end to end and 28x faster for replaced network compared to the core, and every value it produces matches the reference model exactly.
 - **Software.** A bare-metal C runtime runs on the core and drives the accelerator.
 - **Verification.** 23 RTL blocks have their own C++ testbench. The core is then checked against the official RISC-V test suite, the accelerator against the golden reference model.
 
@@ -55,6 +59,19 @@ Counting only the cycles where something is working, the host encoder takes 96.3
 <img src="docs/img/cycles_end_to_end.png" width="49%" alt="End to end cycle counts">
 <img src="docs/img/cycles_eval.png" width="49%" alt="Network evaluation cycle counts">
 </p>
+<br>
+
+**On FPGA**, the same SoC on an Arty A7-100T (xc7a100tcsg324-1).
+
+| | |
+|---|---|
+| clock | 40 MHz, from the board's 100 MHz through a PLL |
+| latency per inference | 10.1 ms (405,776 cycles at h128) |
+| timing | WNS +0.508 ns at 40 MHz. |
+| critical path | `pc_q → imem → regfile → dmem → regfile write`, 82% routing and 18% logic |
+
+The program is baked into LUT RAM and the weights into block RAM at synthesis. The four slide switches select which image to infer, and the LEDs show the predicted digit in binary. The program reruns inference continuously, so toggling a switch changes the image without a reset. 
+
 <br>
 
 ## Verification

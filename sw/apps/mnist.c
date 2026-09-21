@@ -23,5 +23,4 @@ int main() {
   MMIO_LED = pred;
 #endif
 
-  
 }
