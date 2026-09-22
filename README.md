@@ -94,6 +94,14 @@ The rv32ui, unit testbench and spike encoder results each have a negative contro
 
 ## Architecture at a glance
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/accel_dark.png">
+  <img src="docs/img/accel_light.png" alt="Accelerator block diagram" width="100%">
+</picture>
+Solid lines = data signals; dashed lines = control signals.
+
+<br>
+
 No arbiters and no dynamic scheduling anywhere in the datapath: every cycle has exactly one possible next action, so the cycle count is a function of the input data alone.
 
 <br>
@@ -174,6 +182,6 @@ Flags:
 
 ## What's next
 
-- **FPGA deployment on the Arty A7-100T.** 
 - **The spike encoder moves into the accelerator.** 
+- **Pipeline the core.**
 

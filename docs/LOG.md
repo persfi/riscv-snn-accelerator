@@ -455,3 +455,9 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - to access lutram the signals fan out to couple thousand. if its in bram since bram is in blocks it'll only fan out to 4 blocks. So in terms of speed lutram is slower but it reads on the same cycle
 - accelerator's critical path is 20.9ns which means ~48mhz ceiling for clock. to increase clk frequency i'd have to pipeline both the accel and the core or else if i only do the core the clock will cap at 48mhz. (Or I use different clocks for them but thats a future design decision)
 
+## 2026-09-21
+- drew accelerator datapath and add to README.md
+- host decode is not a real module but one drawn to represent some combinational logic written loosely in accel.v
+- draw io colors vanish (for lines). used dash to represent ctrl signals instead
+- read mem addresses are still ctrl because they arent used as data to store
+
