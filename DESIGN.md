@@ -44,6 +44,17 @@ Data Space  (load/store)
 <br>
 
 
+### Accelerator datapath
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/accel_dark.png">
+  <img src="docs/img/accel_light.png" alt="Accelerator block diagram" width="100%">
+</picture>
+
+Solid lines are data, dashed lines are control. 
+
+<br>
+
 ### Host & Accelerator Interface
 
 Registers
@@ -558,7 +569,7 @@ Cycle counts are presented as a mean over MNIST test images 0-9.  Two types of c
 
 <br>
 
-### On hardware
+### On FPGA
 
 The same SoC runs on an Arty A7-100T (xc7a100tcsg324-1).
 
