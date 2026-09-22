@@ -23,16 +23,18 @@ Instruction Space  (fetched by PC)
 
 |Address| Size | Region | Access |
 | ------|-------- | -------  | ------- |
-|0x0000_0000 – 0x0000_0FFF|4 KB |imem|R|
+|0x0000_0000 – 0x0000_3FFF|16 KB |imem|R|
 
 Data Space  (load/store)
 
 |Address| Size | Region | Access |
 | ------|-------- | -------  | ------- |
-|0x0000_0000 – 0x0000_0FFF| 4KB | dmem | R/W|
+|0x0000_0000 – 0x0000_3FFF| 16KB | dmem | R/W|
 |0x1000_0000| 4B | PRINT | W |
 |0x1000_0004| 4B| EXIT| W|
 |0x1000_0008| 4B| PRINT_INT| W|
+|0x1000_000C| 4B| LED| W|
+|0x1000_0010| 4B| SW| R|
 |0x2000_0000 – 0x2000_0FFF| 4KB | accel control| R/W|
 |0x2000_1000 – 0x2000_1FFF| 4KB| event bank A|W|
 |0x2000_2000 – 0x2000_2FFF| 4KB| event bank B|W|
@@ -553,6 +555,46 @@ Cycle counts are presented as a mean over MNIST test images 0-9.  Two types of c
 <img src="docs/img/cycles_end_to_end.png" width="49%" alt="End to end cycle counts">
 <img src="docs/img/cycles_eval.png" width="49%" alt="Network evaluation cycle counts">
 </p>
+
+<br>
+
+### On hardware
+
+The same SoC runs on an Arty A7-100T (xc7a100tcsg324-1).
+
+`PLLE2_BASE` in `fpga/arty-a7-100/clk_gen.v` is the wrapper for the clock scalings (100MHz to 40MHz) in Xilinx's vendor primitives. `top.v` connects the board pins to the SoC.
+
+
+**Timing**
+
+| | |
+|---|---|
+| clock | 40 MHz |
+| latency per inference | 10.1 ms (405,776 cycles at h128) |
+| WNS at 40 MHz | +0.508 ns |
+| WNS at 50 MHz| −2.134 ns |
+| critical path | `pc_q[6]` → `regfile` write port |
+| data path delay|24.161ns: logic 4.113ns (17.023%)  route 20.048ns (82.977%)|
+
+The 50MHz run shows the ceiling of the clock frequency is 45MHz. It is the run that failed, so Vivado kept optimizing, while the 40MHz run stopped once it met the 25ns threshold. Routing takes up most of the time because it is a single cycle core, so one path covers a long distance between sites. 
+
+**Utilization**
+
+| Resource | Used | Available | Util% |
+|---|---|---|---|
+| LUT as logic | 6,229 | 63,400 | 9.8% |
+| LUT as distributed RAM | 2,474 | 19,000 | 13.0% |
+| Flip-flops | 6,664 | 126,800 | 5.3% |
+| Block RAM tiles | 32.5 | 135 | 24.1% |
+| DSP | 0 | 240 | 0% |
+
+All values are observed after expanding imem and dmem to fit 10 images on core. 
+
+The distributed RAM(LUTRAM) is mostly imem, dmem, and 32 registers in regfile of core; the block RAM is the ~100 KB of weights. No DSP (multiplier and adder block) is used because the SNN only uses additions. The flip-flop count is mostly `v_mem` and `acc_mem`.
+
+Program and weights are baked into LUTRAM and BRAM respectively using `$readmemh` with macro defined in Vivado. The four slide switches (SW) select an image through a read-only MMIO register (`SW_ADDR`), the four LEDs show the prediction through a write-only (`LED_ADDR`).
+
+`mnist.c` reruns inference continuously if `BOARD` is defined for FPGA, or else it infers one image only for simulation.
 
 
 

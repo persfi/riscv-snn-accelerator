@@ -72,6 +72,7 @@ Counting only the cycles where something is working, the host encoder takes 96.3
 | latency per inference | 10.1 ms (405,776 cycles at h128) |
 | timing | WNS +0.508 ns at 40 MHz. |
 | critical path | `pc_q → imem → regfile → dmem → regfile write`, 82% routing and 18% logic |
+| utilization | 6,229 LUT (9.8%), 2,474 LUTRAM, 6,664 FF, 32.5 BRAM, 0 DSP |
 
 The program is baked into LUT RAM and the weights into block RAM at synthesis. The four slide switches select which image to infer, and the LEDs show the predicted digit in binary. The program reruns inference continuously, so toggling a switch changes the image without a reset. 
 
@@ -94,13 +95,13 @@ The rv32ui, unit testbench and spike encoder results each have a negative contro
 
 ## Architecture at a glance
 
+<br>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/accel_dark.png">
   <img src="docs/img/accel_light.png" alt="Accelerator block diagram" width="100%">
 </picture>
 Solid lines = data signals; dashed lines = control signals.
-
-<br>
 
 No arbiters and no dynamic scheduling anywhere in the datapath: every cycle has exactly one possible next action, so the cycle count is a function of the input data alone.
 

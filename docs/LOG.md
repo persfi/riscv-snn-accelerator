@@ -461,3 +461,5 @@ Changed layer_state decoding in sequencer → accel layer 1 test passed 256/256.
 - draw io colors vanish (for lines). used dash to represent ctrl signals instead
 - read mem addresses are still ctrl because they arent used as data to store
 
+## 2026-09-22
+- added FPGA timing and utilization to DESIGN.md §5, fixed memory map to 16KB
